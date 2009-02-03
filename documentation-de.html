@@ -138,15 +138,15 @@ pre {
 
 <h2>Problemstellung</h2>
 
-<p>
-Das hier vorgestellte Script zielt allerdings auf solche Webanwendungen, die das klassische Konzept von mehreren HTML-Dokumenten noch nicht gänzlich hinter sich gelassen haben, aber bereits stark mit clientseitigen Scripten aufgewertet sind. Die Aufgabenstellung ist nämlich der <strong>Austausch von Javascript-Daten zwischen zwei Dokumenten</strong>. Diese beiden Dokumente müssen aus Sicherheitsgründen auf derselben Domain liegen (<strong>Same-Origin-Policy</strong>). Ein möglicher Anwendungsfall ist die clientseitige Speicherung von Session-Daten, die nicht mit jeder Anfrage an den Server gesendet werden müssen, wie es bei klassischen Session-Cookies der Fall ist.
+<p>Das hier vorgestellte Script zielt allerdings auf solche Webanwendungen, die das klassische Konzept von mehreren HTML-Dokumenten noch nicht gänzlich hinter sich gelassen haben, aber bereits stark mit clientseitigen Scripten aufgewertet sind. Die Aufgabenstellung ist nämlich der <strong>Austausch von Javascript-Daten zwischen zwei Dokumenten</strong>. Ein möglicher Anwendungsfall ist die clientseitige Speicherung von Session-Daten, die nicht mit jeder Anfrage an den Server gesendet werden müssen, wie es bei klassischen Session-Cookies der Fall ist.</p>
 
 <p>Verbreitete Lösungen für den besagten Austausch sind:</p>
 
 <ul>
-	<li>Frames, d.h. der Zugriff auf andere <code>window</code>-Objekte über die Objekte <code>parent</code> und <code>frames</code> (siehe <a href="http://aktuell.de.selfhtml.org/artikel/javascript/fensterzugriff/">Fenster- und Frameszugriff</a>),</li>
-	<li>Cookies über die Eigenschaft <a href="http://de.selfhtml.org/javascript/objekte/document.htm#cookie">document.cookie</a> sowie</li>
-	<li>Fensternamen über die Eigenschaft <a href="http://de.selfhtml.org/javascript/objekte/window.htm#name">window.name</a>.</li>
+	<li>Frames, d.h. der Zugriff auf andere <code>window</code>-Objekte über die Objekte <code>parent</code> und <code>frames</code> (siehe <a href="http://aktuell.de.selfhtml.org/artikel/javascript/fensterzugriff/">Fenster- und Frameszugriff</a>)</li>
+	<li>Cookies über die Eigenschaft <a href="http://de.selfhtml.org/javascript/objekte/document.htm#cookie">document.cookie</a></li>
+	<li>Die URI des empfangenden Dokuments, angehängt im Query String (<a href="http://de.selfhtml.org/javascript/objekte/location.htm#search">location.search</a>) oder im Ankernamen (<a href="http://de.selfhtml.org/javascript/objekte/location.htm#hash">location.hash</a>)</li>
+	<li>Fensternamen über die Eigenschaft <a href="http://de.selfhtml.org/javascript/objekte/window.htm#name">window.name</a></li>
 </ul>
 
 <h3>Direkter Zugriff mit Frames</h3>
@@ -154,8 +154,6 @@ Das hier vorgestellte Script zielt allerdings auf solche Webanwendungen, die das
 <p>Nur in einem Frameset werden mehrere Dokumente zur gleichen Zeit parallel angezeigt. Scripte in diesen Dokumenten haben direkten Zugriff auf die obersten <code>window</code>-Objekte der jeweils anderen Frames sowie deren Unterobjekte.</p>
 
 <p>Sollen zwei Dokumente nacheinander anstatt gleichzeitig angezeigt werden, so wäre ein Spiel &raquo;über Bande&laquo; möglich: Ein Frameset mit nur einem Frame. Die Scripte zweier im Frameset angezeigten Dokumente haben Zugriff auf das dritte Frameset-Dokument mit eigenen <code>window</code>-Objekt, das beim Dokumentwechsel bestehen bleibt und das als &raquo;Flaschenpost&laquo; zur Weitergabe genutzt werden kann. Dasselbe gilt beim Einsatz von eingebetteten Frames (<code>iframe</code>- oder <code>object</code>-Element).</p>
-
-<p>Frames erlauben zwar den direkten JavaScript-Zugriff auf Objekte eines anderen Dokuments, aber nur äußerst selten bringt eine Website diese Konfiguration bereits mit sich. Frames und eingebettete Frames bringen zahlreiche Nachteile mit sich und es empfiehlt sich keinesfalls, sie ausschließlich zur JavaScript-Datenübergabe einzusetzen.</p>
 
 <h3>Indirekte Übertragung</h3>
 
@@ -166,7 +164,19 @@ Das hier vorgestellte Script zielt allerdings auf solche Webanwendungen, die das
 <p>Die genannten »Kanäle« erlauben nicht den Austausch von beliebigen JavaScript-Objekten, sie bringen bestimmte Einschränkungen mit sich.
 Den Kanal können Sie sich als Nadelöhr vorstellen, durch das nur die Informationen durchpassen, die korrekt und passend kodiert sind.</p>
 
-<p>Konkret bedeutet das: In Cookies (<code>document.cookie</code>) und im Fensternamen (<code>window.name</code>) können letztlich nur Strings gespeichert und ausgelesen werden. Solange nur einzelne JavaScript-Strings wie <code>"Hallo Welt!"</code> oder Zahlen wie <code>168732.12</code> übertragen werden sollen, ist das kein Problem. Wenn jedoch eine komplexe Datenstruktur wie bspw. ein Array übertragen werden soll, ist eine <strong>Serialisierung</strong>, also Umwandlung in einen String nötig. Das empfangende Dokument muss diesen String schließlich dekodieren, also zurück in ein Array-Objekt umwandeln, damit es dem Script dort in gleicher Weise zur Verfügung steht.</p>
+<p>Konkret bedeutet das: In Cookies, im Fensternamen und in der URI können letztlich nur Strings gespeichert und ausgelesen werden. Solange nur einzelne JavaScript-Strings wie <code>"Hallo Welt!"</code> oder Zahlen wie <code>168732.12</code> übertragen werden sollen, ist das kein Problem. Wenn jedoch eine komplexe Datenstruktur wie bspw. ein Array übertragen werden soll, ist eine <strong>Serialisierung</strong>, also Umwandlung in einen String nötig. Das empfangende Dokument muss diesen String schließlich dekodieren, also zurück in ein Array-Objekt umwandeln, damit es dem Script dort in gleicher Weise zur Verfügung steht.</p>
+
+<h3>Nachteile der verbreiteten Lösungen</h3>
+
+<p>Frames erlauben zwar den direkten JavaScript-Zugriff auf Objekte eines anderen Dokuments, aber nur äußerst selten bringt eine Website diese Konfiguration bereits mit sich. Frames und eingebettete Frames bringen zahlreiche Nachteile mit sich und es empfiehlt sich keinesfalls, sie ausschließlich zur JavaScript-Datenübergabe einzusetzen.</p>
+
+<p>Cookies haben den Nachteil, dass ein Cookie üblicherweise nur 4096 Bytes (4 KB) an Daten enthalten kann. Da die Datenmenge durch die Serialisierung und spezielle Kodierung mitunter doppelt so groß werden kann, ist dieses Limit schneller erreicht, als man vermuten würde.</p>
+
+<p>Für den Fensternamen haben die Browser keine rigide Limitierung vorgesehen. Der Fenstername kann praktisch alle möglichen Zeichen beinhalten und selbst große Datenmengen von mehreren 100 Kilobyte werden erfolgreich verarbeitet. Allerdings funktioniert <code>window.name</code> ganz anders und bringt entsprechende Probleme mit sich: Der Fenstername bleibt solange bestehen, wie das Browserfenster (bzw. der Browser-Tab) bestehen bleibt.</p>
+
+<p>Das heißt, der Name kann von jedem Dokument ausgelesen werden, welches nach dem Setzen des Namens im gleichen Fenster geladen wird. Das wichtige Sicherheitskonzept der <strong>Same-Origin-Policy</strong> verhindert den Zugriff auf Dokumente und Cookies von fremden Domains. Der Fenstername unterliegt nicht dieser Beschränkung. Das bedeutet, dass die gespeicherten Daten von allen Dokumenten auf allen Domains ausgelesen werden können, nicht nur von Dokumenten, die von derselben Domain stammen. Es ist auch nicht zuverlässig möglich, <code>window.name</code> beim Verlassen einer Domain automatisch zu löschen, sodass die Daten anderen Websites nicht zur Verfügung stehen.</p>
+
+<p><code>window.name</code> eignet sich in Verbindung mit Frames dafür, Daten kontrolliert und gezielt zwischen verschiedenen JavaScript-Domains zu übertragen. Für den Zweck der Speicherung von Session-Daten ist der Fenstername hingegen als <strong>unsicher</strong> zu betrachten! Sie sollten darin niemals sicherheitsrelevante, vertrauliche oder gar direkt personenbezogene Daten speichern &ndash; dazu gehören etwa die Session-ID, mit der sich der Webbrowser des Benutzers sich gegenüber der serverseitigen Anwendung nach der Anmeldung authentifiziert. Ansonsten sind im schlimmsten Fall <a href="http://de.wikipedia.org/wiki/Session-Hijacking">Session Hijacking</a> und <a href="http://de.wikipedia.org/wiki/Identit%C3%A4tsdiebstahl">Identitätsdiebstahl</a> Tür und Tor geöffnet. Verwenden Sie <code>window.name</code> im öffentlichen Web daher nur zur Übergabe von &raquo;harmlosen&laquo; Daten.</p>
 
 <h2>Lösungsansatz</h2>
 
@@ -189,16 +199,6 @@ Den Kanal können Sie sich als Nadelöhr vorstellen, durch das nur die Informati
 <h3>Abwärtskompatibilität</h3>
 
 <p>Da noch nicht alle Browser den kommenden Standard unterstützen, müssen wir auf Alternativtechniken zurückgreifen, falls <code>sessionStorage</code> nicht zur Verfügung steht. Dabei soll die leistungsfähigste verfügbare Technik verwendet werden.</p>
-
-<h3>Nachteile von Cookies und der Nutzung des Fensternamens</h3>
-
-<p>Cookies haben den Nachteil, dass ein Cookie üblicherweise nur 4096 Bytes (4 KB) an Daten enthalten kann. Da die Datenmenge durch die Serialisierung und spezielle Kodierung mitunter doppelt so groß werden kann, ist dieses Limit schneller erreicht, als man vermuten würde.</p>
-
-<p>Für <code>window.name</code> wiederum haben die Browser keine rigide Limitierung vorgesehen, allerdings funktioniert <code>window.name</code> ganz anders und bringt entsprechende Probleme mit sich: Man setzt den Namen des Browserfensters, der praktisch alle möglichen Zeichen beinhalten kann. Dieser Fenstername bleibt solange bestehen, wie das Browserfenster (bzw. der Browser-Tab) bestehen bleibt.</p>
-
-<p>Das heißt, der Name kann von jedem Dokument ausgelesen werden, welches nach dem Setzen des Namens im Fenster geladen wird! Im Gegensatz zu allen anderen Techniken greift die äußerst wichtige und nützliche Sicherheitsbeschränkung der <strong>Same-Origin-Policy</strong> bei <code>window.name</code> <em>nicht</em>. Das bedeutet, dass die gespeicherten Daten von allen Dokumenten auf allen Domains ausgelesen werden können, nicht nur von Dokumenten, die von derselben Domain stammen. Es ist auch nicht zuverlässig möglich, <code>window.name</code> beim Verlassen der Domain automatisch zu löschen, sodass die Daten anderen Websites nicht zur Verfügung stehen.</p>
-
-<p>Auch wenn sich der Fenstername gut zur Übertragung großer Datenmengen eignet, ist er als <strong>unsicher</strong> zu betrachten. Sie sollten darin niemals sicherheitsrelevante, vertrauliche oder gar direkt personenbezogene Daten speichern &ndash; dazu gehören etwa die Session-ID, mit der sich der Webbrowser des Benutzers sich gegenüber der serverseitigen Anwendung nach der Anmeldung authentifiziert. Ansonsten sind im schlimmsten Fall <a href="http://de.wikipedia.org/wiki/Session-Hijacking">Session Hijacking</a> und <a href="http://de.wikipedia.org/wiki/Identit%C3%A4tsdiebstahl">Identitätsdiebstahl</a> Tür und Tor geöffnet. Verwenden Sie <code>window.name</code> im öffentlichen Web daher nur zur Übergabe von &raquo;harmlosen&laquo; Daten, mit denen ein Angreifer nichts anfangen kann.</p>
 
 <h3>Microsofts DHTML Behaviour: userData</h3>
 
