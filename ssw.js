@@ -204,6 +204,10 @@
 			publicInterface.implementation = imp;
 			
 			/* Finally, create global object */
+			if (publicInterfaceName in window) {
+				/* break if there's already a global object with this name */
+				return;
+			}
 			window[publicInterfaceName] = publicInterface;
 		}
 	
@@ -233,8 +237,6 @@
 			init : function () {
 				/* Initialize serializer and set up function references */
 				this.serializer.init();
-				this.serialize = this.serializer.serialize;
-				this.unserialize = this.serializer.unserialize;
 				
 				/* Call specific init method */
 				if (this.specificInit) {
@@ -244,7 +246,7 @@
 				/* Initial reading and unserializing */
 				var string = this.read();
 				if (string && string.charAt(0) == "{") {
-					this.box = this.unserialize(string);
+					this.box = this.serializer.unserialize(string);
 				}
 			},
 			
@@ -253,6 +255,7 @@
 			 * 	isAvailable
 			 * 	read
 			 * 	save
+			 * 	specificInit   (optional)
 			 * 	specificClear   (optional)
 			 */
 			
@@ -268,13 +271,13 @@
 				} else {
 					this.box[param1] = value;
 				}
-				this.save(this.serialize(this.box));
+				this.save(this.serializer.serialize(this.box));
 			},
 			
 			remove : function (name) {
 				if (name in this.box) {
 					delete this.box[name];
-					this.save(this.serialize(this.box));
+					this.save(this.serializer.serialize(this.box));
 				}
 			},
 			
@@ -283,8 +286,7 @@
 				this.save();
 				if (this.specificClear) {
 					this.specificClear();
-				}
-				
+				}				
 			}
 		}
 	};
@@ -404,21 +406,13 @@
 		specificClear : function () {
 			this.deleteCookie(this.cookieName);
 		},
-			
-		escapeTable: {
-			"%" : "%%",
-			";" : "%S",
-			'"' : "%Q"
-		},
 		
 		escapeCookie : function (value) {
 			/*
 			 * Just escape semicolon and double quotes (the latter escpecially for Opera),
 			 * which is more economic than using encodeURIComponent/decodeURIComponent.
 			 */
-			value = value.toString();
-			helper.forEach(this.escapeTable
-			return .replace(/%/g, "%%").replace(/;/g, '%S').replace(/"/g, '%Q');
+			return value.replace(/%/g, "%%").replace(/;/g, "%S").replace(/"/g, '%Q');
 		},
 		
 		unescapeCookie : function (value) {
@@ -426,14 +420,19 @@
 		},
 		
 		getCookie : function (name) {
-			var pairs = document.cookie.split(/;\s*/), value = helper.forEach(pairs, function(str) {
-				if (!str)
-					return;
-				var separatorPosition = str.indexOf("="), testName = str.substring(0, separatorPosition);
-				if (testName == name) { return str.substring(separatorPosition + 1); }
-			});
-			if (!value)
+			var pairs = document.cookie.split(/;\s*/),
+				value = helper.forEach(pairs, function(str) {
+					if (!str)
+						return;
+					var separatorPosition = str.indexOf("="),
+						testName = str.substring(0, separatorPosition);
+					if (testName == name) {
+						return str.substring(separatorPosition + 1);
+					}
+				});
+			if (!value) {
 				return false;
+			}
 			return this.unescapeCookie(value);
 		},
 		
