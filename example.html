@@ -1,17 +1,20 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html lang="de">
+<html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>SSW Test</title>
+<title>Session Storage Wrapper Example</title>
 <script type="text/javascript" src="ssw.js"></script>
 <script type="text/javascript">
 window.onload = function () {
 	var hash = ssw.get();
 	if (hash) {
-		document.getElementById("ausgabe").innerHTML = hash.eingabe;
+		var string = "";
 		for (var name in hash) {
-			document.write(name);			
+			if (hash.hasOwnProperty(name)) {
+				string += name + ": " + hash[name] + "\n";
+			}
 		}
+		document.getElementById("ausgabe").innerHTML = string;
 	}
 	document.forms[0].onsubmit = function () {
 		ssw.add({
@@ -22,48 +25,38 @@ window.onload = function () {
 	};
 };
 </script>
-<style type="text/javascript">
-	
+<style type="text/css">
+body { font-family: sans-serif; }
 </style>
 </head>
 <body>
 
-<form action="">
-	<input id="input">
-	<input type="submit" id="button" value="save">
-</form>
-
-<p>gespeichert: <span id='ausgabe'></span></p>
+<h1>Session Storage Wrapper Example</h1>
 
 <script type="text/javascript">
-document.write(
-	"<pre>methode: " + storage.implementation.name + "\n" +
-	"document.cookie: " + document.cookie + "\n" +
-	"window.name: " + window.name + "<\/pre>"
-);
-
-//window.name = "";
-
-//document.cookie = "a=\"bl'ub\"";
-//document.cookie = "storage=leer";
-//document.write("<p>document.cookie:", document.cookie + "<\/p>");
-
-/*
-var cImp = storage.implementation.get("cookie");
-var teststring = "a\"b'c=d;e%füöä";
-cImp.setCookie("test", teststring);
-document.write("<p>document.cookie:", document.cookie + "<\/p>");
-var vergleichsstring = cImp.getCookie("test");
-cImp.deleteCookie("test");
-document.write("<p>testcookie: " + vergleichsstring + "<\/p>");
-document.write("<p>identisch: " + (teststring == vergleichsstring ? "ja" : "nein") + "<\/p>");
-*/
-//cImp.deleteCookie("storage");
-
-//var cImp = storage.implementation;
-//cImp.clear();
-
+document.write("<p>Detected storage method: <strong>" + ssw.implementation.name + "<\/strong><\/p>");
 </script>
+
+<form action="">
+	<input type="text" id="input">
+	<input type="submit" id="button" value="Save value">
+</form>
+
+<h2>Saved Values:</h2>
+
+<pre id='ausgabe'></pre>
+
+<h2>Internals:</h2>
+
+<pre>
+<script type="text/javascript">
+document.write(
+	"window.sessionStorage: " + window.sessionStorage + "\n" +
+	"document.cookie: '" + document.cookie + "'\n" +
+	"window.name: '" + window.name
+);
+</script>
+</pre>
 
 </body>
 </html>

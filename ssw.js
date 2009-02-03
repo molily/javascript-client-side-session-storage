@@ -32,7 +32,6 @@
 		 */
 		
 		forEach : function (obj, func) {
-			/*
 			if (obj.constructor == Array) {
 				// Array
 				for (var i = 0, length = obj.length; i < length; i++) {
@@ -42,7 +41,6 @@
 					}
 				}
 			} else {
-			*/
 				// Object
 				for (var name in obj) {
 					if (obj.hasOwnProperty(name)) {
@@ -52,7 +50,7 @@
 				  		}
 					}
 				}
-			/* } */
+			}
 			return null;
 		},
 		
@@ -73,7 +71,7 @@
 		 */
 		
 		bind : function (func, obj) {
-			return function() {
+			return function () {
 				return func.apply(obj, arguments);
 			};
 		},
@@ -230,23 +228,18 @@
 			
 			/* Store Object */
 			
-			box: {},
+			box: null,
 			
 			/* Initialization */
 			
 			init : function () {
-				/* Initialize serializer and set up function references */
+				/* Initialize serializer. For JSON, this loads the external script file asynchronously,
+				so we cannot use the serializer during the initialization. */
 				this.serializer.init();
 				
-				/* Call specific init method */
+				/* Call the specific init method */
 				if (this.specificInit) {
 					this.specificInit();
-				}
-
-				/* Initial reading and unserializing */
-				var string = this.read();
-				if (string && string.charAt(0) == "{") {
-					this.box = this.serializer.unserialize(string);
 				}
 			},
 			
@@ -259,25 +252,43 @@
 			 * 	specificClear   (optional)
 			 */
 			
+			/* Internal members */
+			
+			readBox : function () {
+				/* Initial reading and unserializing */
+				if (this.box) {
+					return;
+				}
+				var string = this.read();
+				this.box = string && string.charAt(0) == "{" ? this.serializer.unserialize(string) : {};
+			},
+
+			saveBox : function () {
+				this.save(this.serializer.serialize(this.box));
+			},
+
 			/* Public members */
 			
 			get : function (param1) {
+				this.readBox();
 				return param1 != undefined ? this.box[param1] : this.box;
 			},
 			
 			add : function (param1, value) {
+				this.readBox();
 				if (arguments.length == 1) {
 					helper.mixin(param1, this.box);
 				} else {
 					this.box[param1] = value;
 				}
-				this.save(this.serializer.serialize(this.box));
+				this.saveBox();
 			},
 			
 			remove : function (name) {
+				this.readBox();
 				if (name in this.box) {
 					delete this.box[name];
-					this.save(this.serializer.serialize(this.box));
+					this.saveBox();
 				}
 			},
 			
@@ -360,17 +371,19 @@
 		
 		/* Internal members */
 		
-		storeName: "_sessionstorage",
+		storeName: "_ssw",
 		
 		specificInit : function () {
 			/* Create a non-existing element and append it to the root element */
-			this.element = document.createElement(this.storeName);
-			document.documentElement.appendChild(this.element);
+			var el = document.createElement(this.storeName);
+			document.documentElement.appendChild(el);
 			/* Apply userData behavior */
-			this.element.addBehavior("#default#userData");
+			el.addBehavior("#default#userData");
+			this.element = el;
 		},
 		
 		specificClear : function () {
+			/* Expire at once */
 			this.element.expires = new Date(0).toUTCString();
 		}
 		
@@ -386,9 +399,10 @@
 		/* Necessary methods */
 		
 		isAvailable : function () {
-			var v = "storage-test";
-			this.setCookie(v, v);
-			return this.getCookie(v) == v ? (this.deleteCookie(v), true) : false;
+			/* Try to set and get a cookie to test if session cookies are allowed */
+			var s = this.cookieName + "-test";
+			this.setCookie(s, s);
+			return this.getCookie(s) == s ? (this.deleteCookie(s), true) : false;
 		},
 		
 		read : function () {
@@ -401,7 +415,7 @@
 		
 		/* Internal members */
 		
-		cookieName: "storage",
+		cookieName: "ssw",
 		
 		specificClear : function () {
 			this.deleteCookie(this.cookieName);
@@ -439,7 +453,7 @@
 		setCookie : function (name, value) {
 			var cookieString = name + "=" + this.escapeCookie(value);
 			if (cookieString.length > 4096) {
-				throw new Error("Storage: Cookie size exceeds 4096 byte limit");
+				throw new Error("Cookie size exceeds 4096 byte limit");
 			}
 			document.cookie = cookieString;
 		},
