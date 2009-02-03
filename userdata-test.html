@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title></title>
+<script>
+window.onload = function () {
+	var storeName = "_sessionstorage",
+		el = document.getElementById("store"),
+		el = document.createElement(storeName);
+	document.documentElement.appendChild(el);
+	
+	alert(document.documentElement.innerHTML);
+	
+	alert("store\n" + el.getAttribute(storeName));
+	alert("first child\n" + el.firstChild);
+
+	el.addBehavior("#default#userData");
+	el.load(storeName);
+	
+	alert("store loaded");
+	alert("store\n" + el.getAttribute(storeName));
+	alert("first child\n" + el.firstChild);
+	
+	el.setAttribute(storeName, "{'bla'}");
+	el.appendChild(document.createElement("test"));
+	
+	alert("storage changed");
+	alert("first child\n" + el.firstChild);
+	
+	el.save(storeName);
+	
+	alert("store saved and removed");
+	alert(document.documentElement.innerHTML);
+	
+	el.removeBehavior("#default#userData");
+	
+	alert("store saved and removed");
+	alert(document.documentElement.innerHTML);
+
+};
+</script>
+</head><body></body></html>
