@@ -97,8 +97,7 @@
 			el.type = "text/javascript";
 			el.src = uri;
 			head.appendChild(el);
-		}
-		
+		}		
 	};
 
 	/* ******************************************************************** */
@@ -328,7 +327,7 @@
 		/* Private members */
 		
 		init : function () {
-			/* empty */
+			sessionStorage.ssw this.box = {}
 		},
 		
 		isAvailable : function () {
@@ -338,14 +337,14 @@
 		/* Public members */
 		
 		get : function (param1) {
-			return param1 != undefined ? sessionStorage.getItem(param1) : sessionStorage;
+			return param1 != undefined ? sessionStorage.ssw.getItem(param1) : sessionStorage;
 		},
 		
 		add : function (param1, value) {
 			if (arguments.length == 1) {
 				helper.mixin(obj, sessionStorage);
 			} else {
-				sessionStorage.addItem(param1, value);
+				sessionStorage.setItem(param1, value);
 			}
 		},
 		
@@ -354,7 +353,14 @@
 		},
 		
 		clear : function () {
-			sessionStorage.clear();
+			var s = sessionStorage;
+			if (s.clear) {
+				s.clear();
+			} else if (typeof s.length == "number") {
+				while (s.length > 0) {
+					s.removeItem(s.key(0));
+				}
+			}
 		}
 	
 	});
@@ -384,7 +390,7 @@
 		
 		/* Internal members */
 		
-		storeName: "_ssw",
+		storeName: "ssw",
 		
 		specificInit : function () {
 			/* Create a non-existing element and append it to the root element */
