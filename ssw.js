@@ -327,40 +327,35 @@
 		/* Private members */
 		
 		init : function () {
-			sessionStorage.ssw this.box = {}
+			sessionStorage[this.boxName] = this.box = {};
 		},
 		
 		isAvailable : function () {
 			return Boolean(window.sessionStorage);
 		},
 		
+		boxName : "ssw",
+			
 		/* Public members */
 		
 		get : function (param1) {
-			return param1 != undefined ? sessionStorage.ssw.getItem(param1) : sessionStorage;
+			return param1 != undefined ? this.box[param1] : this.box;
 		},
 		
 		add : function (param1, value) {
 			if (arguments.length == 1) {
-				helper.mixin(obj, sessionStorage);
+				helper.mixin(obj, this.box);
 			} else {
-				sessionStorage.setItem(param1, value);
+				this.box[param1] = value;
 			}
 		},
 		
 		remove : function (name) {
-			sessionStorage.removeItem(name);
+			delete this.box[name];
 		},
 		
 		clear : function () {
-			var s = sessionStorage;
-			if (s.clear) {
-				s.clear();
-			} else if (typeof s.length == "number") {
-				while (s.length > 0) {
-					s.removeItem(s.key(0));
-				}
-			}
+			this.box = {};
 		}
 	
 	});
