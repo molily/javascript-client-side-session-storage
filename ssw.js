@@ -33,7 +33,7 @@
 		
 		forEach : function (obj, func) {
 			if (obj.constructor == Array) {
-				// Array
+				// Array (defined order)
 				for (var i = 0, length = obj.length; i < length; i++) {
 					var result = func.call(obj, obj[i], i);
 					if (result != undefined) {
@@ -41,7 +41,7 @@
 					}
 				}
 			} else {
-				// Object
+				// Object (order not relevant)
 				for (var name in obj) {
 					if (obj.hasOwnProperty(name)) {
 						var result = func.call(obj, obj[name], name);
@@ -60,7 +60,7 @@
 		 */
 		
 		mixin : function (source, target) {
-			helper.forEach(source, function(value, name) {
+			helper.forEach(source, function (value, name) {
 				target[name] = value;
 			});
 			return target;
@@ -81,6 +81,17 @@
 		 */
 		
 		loadScript : function (uri) {
+			/*
+			if (document.write) {
+				try {
+					document.write("<script type='text/javascript' src='" + uri + "'><\/script>");
+				} catch (e) {
+					throw new Error("External script could not be loaded because document.write threw an exception");
+				}
+			}
+			*/
+			/* This loads the script asynchronously and it cannot be guaranteed that the script
+			is fully loaded and executed when the SSW library is used. */				
 			var head = document.getElementsByTagName("head")[0],
 				el = document.createElement("script");
 			el.type = "text/javascript";
@@ -101,7 +112,7 @@
 			
 			/* URI of the JSON script */
 			
-			scriptUri: "json2.js",
+			scriptUri: "../json2.js",
 			
 			init : function () {
 				/* Load additional script if there's no native JSON implementation */
@@ -112,14 +123,14 @@
 			
 			serialize : function (object) {
 				if (!(window.JSON && JSON.stringify)) {
-					return false;
+					throw new Error("JSON serialization not available");
 				}
 				return JSON.stringify(object);
 			},
 			
 			unserialize : function (string) {
 				if (!(window.JSON || JSON.parse)) {
-					return false;
+					throw new Error("JSON parsing not available");
 				}
 				return JSON.parse(string);
 			}
@@ -145,7 +156,7 @@
 			if (imp) {
 				/* 
 				 * Push the object into the array *and* save it as a property
-				 * so we can retrieve it by index or name
+				 * so we can retrieve it by index or name.
 				 */
 				this.list.push(imp);
 				this.list[imp.name] = imp;
@@ -162,15 +173,11 @@
 		
 		detect : function () {
 			/* Iterate over implementation list and find the first supported implementation */
-			var imp = helper.forEach(this.list, function(imp) {
+			var imp = helper.forEach(this.list, function (imp) {
 				if (imp.isAvailable()) {
 					return imp;
 				}
 			});
-			/* Break if no implementation is supported, otherwise set up the found implementation */
-			if (!imp) {
-			 	return;
-			 }
 			this.setup(imp);
 		},
 		
@@ -183,29 +190,35 @@
 		/* Setup and initialize an implementation */
 		
 		setup : function (imp) {
-			/* Call specific init function of the implementation */
+			/* Break if there's already a global object with this name */
+			if (publicInterfaceName in window) {
+				return;
+			}
+			
+			/* If no implementation is supported, set the global object to false and break */
+			if (!imp) {
+				window[publicInterfaceName] = false;
+			 	return;
+			 }
+
+			/* Call the specific init function of the implementation */
 			imp.init();
 			
 			/* Set up the public interface object */
-			var publicInterface = {};
-			
-			/* Provide core methods */
-			helper.forEach(["get", "add", "remove", "clear"], function(methodName) {
+			var publicInterface = {
+				/* Provide active (auto-detected) implementation */
+				implementation : imp,
+				/* Provide method to force another implementation */
+				forceImplementation : helper.bind(this.force, this)
+			};
+
+			/* Provide core methods from the implementation */
+			helper.forEach(["get", "add", "remove", "clear"], function (methodName) {
 				/* Copy the bound function to the public interface */
 				publicInterface[methodName] = helper.bind(imp[methodName], imp);
 			});
 			
-			/* Provide force implementation method */
-			publicInterface.forceImplementation = helper.bind(this.force, this);
-			
-			/* Provide active implementation */
-			publicInterface.implementation = imp;
-			
-			/* Finally, create global object */
-			if (publicInterfaceName in window) {
-				/* break if there's already a global object with this name */
-				return;
-			}
+			/* Finally, create the global object */
 			window[publicInterfaceName] = publicInterface;
 		}
 	
@@ -294,7 +307,7 @@
 			
 			clear : function () {
 				this.box = {};
-				this.save();
+				this.saveBox();
 				if (this.specificClear) {
 					this.specificClear();
 				}				
@@ -410,6 +423,10 @@
 		},
 		
 		save : function (serializedString) {
+			if (!serializedString) {
+				/* break if the string is empty */
+				return;
+			}
 			this.setCookie(this.cookieName, serializedString);
 		},
 		
@@ -435,9 +452,10 @@
 		
 		getCookie : function (name) {
 			var pairs = document.cookie.split(/;\s*/),
-				value = helper.forEach(pairs, function(str) {
-					if (!str)
+				value = helper.forEach(pairs, function (str) {
+					if (!str) {
 						return;
+					}
 					var separatorPosition = str.indexOf("="),
 						testName = str.substring(0, separatorPosition);
 					if (testName == name) {

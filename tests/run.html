@@ -1,0 +1,184 @@
+<html>
+<head>
+<title>SSW Tests</title>
+<script type="text/javascript" src="./yui/build/yui/yui.js"></script>
+<style type="text/css">
+#iframe {
+	height: 100px;
+	width: 400px;
+	border: 1px solid gray;
+}
+.yui-console {
+	position: static !important;
+	margin: 1em 0;
+}
+.yui-console-content {
+	width: auto !important;
+}
+.yui-console-bd {
+	height: auto !important;
+}
+</style>
+</head>
+<body class="yui-skin-sam">
+
+<h1>SSW Tests</h1>
+
+<div id="log"></div>
+
+<iframe name="iframe" id="iframe" src="test-document.html" border="0"></iframe>
+
+<script type="text/javascript">
+YUI({
+	base : "./yui/build/",
+	useBrowserConsole : false
+}).use("event", "node", "yuitest", "console", function (Y) {
+
+	Y.namespace("sswTest");
+	
+	/* Reload the test document */
+	
+	Y.sswTest.reload = function (loadHandler) {
+		arguments.callee.handler = loadHandler;
+		Y.sswTest.window.location.reload();
+	};
+	
+	Y.sswTest.reload.handler = new Function;
+	
+	/* Helper for tests consisting of two parts with a reload between them */
+	
+	Y.sswTest.twoParts = function (test, func1, func2) {
+		func1();
+		test.wait();
+		Y.sswTest.reload(function () {
+			test.resume(func2);
+		});
+	};
+	
+	/* Setup */
+	
+	Y.sswTest.setup = function () {
+		
+		/* Get the window object of the test Document */
+		
+		Y.sswTest.window = window.frames.iframe;
+		
+		/* Setup load handler */
+		
+		Y.on("load", function () {
+			Y.sswTest.reload.handler();
+		}, "#iframe");
+		
+		/* Create Suite */
+		
+		var testsuite = new Y.Test.Suite("Session Storage Wrapper Unit Tests");
+		Y.sswTest.suite = testsuite;
+		
+		/* Shortcuts */
+		
+		var A = Y.Assert,
+			w = Y.sswTest.window,
+			d = w.document;
+		
+		/* Helper Function */
+		
+		function addTestcase (o) {
+			testsuite.add(new Y.Test.Case(o));
+		}
+		
+		/* Add tests */
+		
+		/* ************************************************************************************************ */
+        
+		addTestcase({
+			name : "Implementation Auto-Detection (global interface is exposed)",
+			testDetection : function () {
+				A.isObject(w.ssw);
+			} 
+		});
+		
+		/* ------------------------------------------------------------------------------------------------ */
+
+		addTestcase({
+			name : "Getting an empty storage object",
+			setUp : function () {
+				w.ssw.clear();
+			},
+			testGet : function () {
+				var s = w.ssw.get();
+				A.isObject(s);
+				var memberFound = false;
+				for (var propName in s) {
+					/* This loop doesn't use hasOwnProperty since the object shouldn't inherit members
+					via the prototype chain and the scipt should not augment Object.prototype. */
+					memberFound = true;
+				}
+				if (memberFound) {
+					Y.isFalse(memberFound);
+				}			
+			}
+		});
+			
+		/* ------------------------------------------------------------------------------------------------ */
+		
+		addTestcase({
+			name : "Saving and Reading different values with automatic implementation detection",
+			setUp : function () {
+				Y.log("Implementation: " + w.ssw.implementation.name);
+				Y.log("Cookie: " + d.cookie);
+				w.ssw.clear();
+			},
+			tearDown : function () {
+				w.ssw.clear();
+			},
+			testNumber : function () {
+				var n = 123.456;
+				Y.sswTest.twoParts(function () {
+					w.ssw.add("number", n);
+				}, function () {
+					A.areEqual(n, w.ssw.get("number"));
+				});
+			},
+			testString : function () {
+				var s = "test";
+				Y.sswTest.twoParts(function () {
+					w.ssw.add("string", s);
+				}, function () {
+					A.areEqual(s, w.ssw.get("string"));
+				});
+			}
+		});
+		
+		/* ------------------------------------------------------------------------------------------------ */
+		
+		
+		/* ------------------------------------------------------------------------------------------------ */
+		/* ------------------------------------------------------------------------------------------------ */
+		
+		/* ************************************************************************************************ */
+		
+	};
+	
+	/* Run the tests */
+	
+	Y.sswTest.run = function () {
+		var r = new Y.Console({
+			verbose : true,
+			newestOnTop : false
+		});
+		r.render('#log');
+		Y.Test.Runner.add(Y.sswTest.suite);
+		Y.Test.Runner.run();
+	};
+	
+	/* Start */
+	
+	Y.sswTest.setup();
+	Y.sswTest.run()
+	
+});
+</script>
+
+
+</body>
+</html>
