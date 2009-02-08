@@ -17,6 +17,12 @@
 .yui-console-bd {
 	height: auto !important;
 }
+.yui-console-entry-fail .yui-console-entry-meta {
+	background-color: #FCC !important;
+}
+.yui-console-entry-fail .yui-console-entry-cat {
+	background-color: #F88 !important;
+}
 </style>
 </head>
 <body class="yui-skin-sam">
@@ -130,9 +136,10 @@ YUI({
 					/* This loop doesn't use hasOwnProperty since the object shouldn't inherit members
 					via the prototype chain and the scipt should not augment Object.prototype. */
 					memberFound = true;
+					Y.log("Found Member on empty object: " + propName + ", own property? " + s.hasOwnProperty(propName));
 				}
 				if (memberFound) {
-					Y.isFalse(memberFound);
+					A.isFalse(memberFound);
 				}			
 			}
 		});
@@ -155,14 +162,13 @@ YUI({
 				w.ssw.add(k, v);
 				A.areEqual(v, w.ssw.get(k));
 				w.ssw.remove(k);
-				//alert(w.ssw.get(k));
-				//A.areEqual();
 			},
 			testSaveNumber : function () {
 				var k = "number",
 					v = 123.456;
 				w.ssw.add(k, v);
 				A.areEqual(v, w.ssw.get(k));
+				w.ssw.remove(k);
 			},
 			testSaveBoolean : function () {
 				var k = "boolean",
@@ -202,13 +208,12 @@ YUI({
 				}, function () {
 					A.areEqual(s, w.ssw.get("string"));
 				});
-			}
-			,
+			},
 			testTransferNumber : function () {
 				var n = 123.456;
-				Y.sswTest.twoParts(this, function (w) {
+				Y.sswTest.twoParts(this, function () {
 					w.ssw.add("number", n);
-				}, function (w) {
+				}, function () {
 					A.areEqual(n, w.ssw.get("number"));
 				});
 			}

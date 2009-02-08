@@ -327,7 +327,9 @@
 		/* Private members */
 		
 		init : function () {
-			sessionStorage[this.boxName] = this.box = {};
+			if (!sessionStorage[this.boxName]) {
+				sessionStorage[this.boxName] = {};
+			}
 		},
 		
 		isAvailable : function () {
@@ -339,23 +341,24 @@
 		/* Public members */
 		
 		get : function (param1) {
-			return param1 != undefined ? this.box[param1] : this.box;
+			return param1 != undefined ? sessionStorage[this.boxName][param1] : sessionStorage[this.boxName];
 		},
 		
 		add : function (param1, value) {
 			if (arguments.length == 1) {
-				helper.mixin(obj, this.box);
+				helper.mixin(param1, this.box);
 			} else {
-				this.box[param1] = value;
+				sessionStorage[this.boxName][param1] = value;
+				//alert("added:\n" + param1 + ": " + sessionStorage[this.boxName][param1]);
 			}
 		},
 		
 		remove : function (name) {
-			delete this.box[name];
+			delete sessionStorage[this.boxName][name];
 		},
 		
 		clear : function () {
-			this.box = {};
+			sessionStorage[this.boxName] = {};
 		}
 	
 	});
