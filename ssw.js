@@ -174,16 +174,23 @@
 			/* Iterate over implementation list and find the first supported implementation */
 			var imp = helper.forEach(this.list, function (imp) {
 				if (imp.isAvailable()) {
+					imp.available = true;
 					return imp;
+				} else {
+					imp.available = false;
 				}
 			});
 			this.setup(imp);
 		},
 		
-		/* Force an implementation (override auto-detect) */
+		/* Force an implementation (override auto-detect, but check availability) */
 		
 		force : function (name) {
-			this.setup(this.get(name));
+			var imp = this.get(name);
+			if (!imp.available) {
+				imp = false;
+			}
+			this.setup(imp);
 		},
 		
 		/* Setup and initialize an implementation */
