@@ -39,11 +39,16 @@ YUI({
 	
 	Y.namespace("sswTest");
 	
-	/* Reload the test document */
+	/* Mixin helper */
 	
-	Y.sswTest.getTestWindow = function () {
-		return window.frames.iframe;
-	};
+	function mixin (source, target) {
+		for (var name in source) {
+			if (source.hasOwnProperty(name)) {
+				target[name] = source[name];
+			}
+		}
+		return target;
+	}
 		
 	/* Helper for tests consisting of two parts with a reload between them */
 	
@@ -71,7 +76,7 @@ YUI({
 		var w = window.frames.iframe;
 		Y.sswTest.window = w;
 		Y.log("Using Implementation: " + w.ssw.implementation.name);
-				
+		
 		/* Setup load handler */
 		
 		/*
@@ -117,7 +122,7 @@ YUI({
 		addTestcase({
 			name : "Implementation Auto-Detection (global interface is exposed)",
 			testDetection : function () {
-				A.isObject(Y.sswTest.getTestWindow().ssw);
+				A.isObject(w.ssw);
 			} 
 		});
 		
@@ -146,78 +151,118 @@ YUI({
 			
 		/* ------------------------------------------------------------------------------------------------ */
 		
-		addTestcase({
-			name : "Saving, Reading and Removing values, detected implementation, without reloads",
-			/*
-			setUp : function () {
-				w.ssw.clear();
-			},
-			tearDown : function () {
-				w.ssw.clear();
-			},
-			*/
+		var saveTests = {
 			testSaveString : function () {
-				var k = "string",
-					v = "test";
-				w.ssw.add(k, v);
-				A.areEqual(v, w.ssw.get(k));
-				w.ssw.remove(k);
+				var key = "string",
+					originalValue = "test";
+				w.ssw.add(key, originalValue);
+				A.areSame(originalValue, w.ssw.get(key));
 			},
 			testSaveNumber : function () {
-				var k = "number",
-					v = 123.456;
-				w.ssw.add(k, v);
-				A.areEqual(v, w.ssw.get(k));
-				w.ssw.remove(k);
+				var key = "number",
+					originalValue = 123.456;
+				w.ssw.add(key, originalValue);
+				A.areSame(originalValue, w.ssw.get(key));
 			},
 			testSaveBoolean : function () {
-				var k = "boolean",
-					v = true;
-				w.ssw.add(k, v);
-				A.areEqual(v, w.ssw.get(k));
+				var key = "booleanK",
+					originalValue = true;
+					
+				w.ssw.add(key, originalValue);
+				A.areSame(originalValue, w.ssw.get(key));
 				
-				v = false;
-				w.ssw.add(k, v);
-				A.areEqual(v, w.ssw.get(k));
+				originalValue = false;
+				w.ssw.add(key, originalValue);
+				A.areSame(originalValue, w.ssw.get(key));
 			},
 			testSaveArray : function () {
-				var k = "array",
-					v = [ 1.1, "2", true ];
-				w.ssw.add(k, v);
-				var v2 = w.ssw.get(k);
-				Y.ArrayAssert.itemsAreEqual(v, v2);
-			}
-		});
-
+				var key = "array",
+					originalValue = [ 1.1, "2", true ];
+				w.ssw.add(key, originalValue);
+				Y.ArrayAssert.itemsAreSame(originalValue, w.ssw.get(key));
+			},
+			testSaveSingleObject : function () {
+				w.ssw.clear();
+				var key = "object",
+					originalValue = {
+						string : "test",
+						number : 123.456,
+						booleanK : false,
+						functionK : new Function,
+						regexp : new RegExp,
+						date : new Date,
+						documentNode : w.document,
+						elementNode : document.createElement,
+					};
+				w.ssw.add(key, originalValue);
+				var savedValue = w.ssw.get(key);
+				A.areSame(savedValue.string, originalValue.string);
+			}			
+		};
+		
 		/* ------------------------------------------------------------------------------------------------ */
 		
-		addTestcase({
-			name : "Saving, Reading and Removing different values, detected implementation, with reloads",
-			/*
-			setUp : function () {
-				w.ssw.clear();
-			},
-			tearDown : function () {
-				w.ssw.clear();
-			},
-			*/
+		var transferTests = {
 			testTransferString : function () {
-				var s = "test";
+				var key = "string",
+					value = "test";
 				Y.sswTest.twoParts(this, function () {
-					w.ssw.add("string", s);
+					w.ssw.add(key, value);
 				}, function () {
-					A.areEqual(s, w.ssw.get("string"));
+					A.areSame(value, w.ssw.get(key));
 				});
 			},
 			testTransferNumber : function () {
-				var n = 123.456;
+				var key = "string",
+					value = 123.456;
 				Y.sswTest.twoParts(this, function () {
-					w.ssw.add("number", n);
-				}, function () {
-					A.areEqual(n, w.ssw.get("number"));
+					w.ssw.add(key, value);
+				}, function () {					
+					A.areSame(value, w.ssw.get(key));
 				});
+			},
+			testTransferBoolean : function () {
+				var key = "boolean",
+					originalValue = true;
+					
+				w.ssw.add(key, originalValue);
+				A.areSame(originalValue, w.ssw.get(key));
+				
+				originalValue = false;
+				w.ssw.add(key, originalValue);
+				A.areSame(originalValue, w.ssw.get(key));
+			},
+			testTransferArray : function () {
+				var key = "array",
+					originalValue = [ 1.1, "2", true ];
+				w.ssw.add(key, originalValue);
+				Y.ArrayAssert.itemsAreSame(originalValue, w.ssw.get(key));
 			}
-		});
+		};
+		
+		/* ------------------------------------------------------------------------------------------------ */
+		
+		addTestcase(mixin(saveTests, {
+			name : "Saving and Reading values, detected implementation, without reloads",
+			setUp : function () {
+				w.ssw.clear();
+			},
+			tearDown : function () {
+				w.ssw.clear();
+			}
+		}));
+
+		/* ------------------------------------------------------------------------------------------------ */
+
+		addTestcase(mixin(transferTests, {
+			name : "Saving and Reading different values, detected implementation, with reloads",
+			setUp : function () {
+				w.ssw.clear();
+			},
+			tearDown : function () {
+				w.ssw.clear();
+			}
+		}));
 		
 		/* ------------------------------------------------------------------------------------------------ */
 		
