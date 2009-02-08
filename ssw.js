@@ -267,7 +267,7 @@
 			/* Internal members */
 			
 			readBox : function () {
-				/* Initial reading and unserializing */
+				/* Initial reading and unserializing if box hasn't been set up */
 				if (this.box) {
 					return;
 				}
@@ -318,49 +318,37 @@
 	/* Implementations */
 	
 	/* -------------------------------------------------------------------- */
-	/* DOM Storage */
+	/* DOM Storage, using serialized template */
 	
-	implementation.add({
+	implementation.add(mixins.serialized, {
 		
 		name: "domstorage",
-		
-		/* Private members */
-		
-		init : function () {
-			if (!sessionStorage[this.boxName]) {
-				sessionStorage[this.boxName] = {};
-			}
-		},
+
+		/* Necessary methods */
 		
 		isAvailable : function () {
 			return Boolean(window.sessionStorage);
 		},
 		
-		boxName : "ssw",
-			
-		/* Public members */
-		
-		get : function (param1) {
-			return param1 != undefined ? sessionStorage[this.boxName][param1] : sessionStorage[this.boxName];
+		read : function () {
+			var serializedString = sessionStorage.getItem(this.storeName);
+			return serializedString === null ? "" : serializedString.toString();
 		},
 		
-		add : function (param1, value) {
-			if (arguments.length == 1) {
-				helper.mixin(param1, this.box);
-			} else {
-				sessionStorage[this.boxName][param1] = value;
-				//alert("added:\n" + param1 + ": " + sessionStorage[this.boxName][param1]);
-			}
+		save : function (serializedString) {
+			return sessionStorage.setItem(this.storeName, serializedString);
 		},
 		
-		remove : function (name) {
-			delete sessionStorage[this.boxName][name];
+		/* Internal members */
+
+		storeName : publicInterfaceName,
+		
+		specificInit : function () {
 		},
 		
-		clear : function () {
-			sessionStorage[this.boxName] = {};
+		specificClear : function () {
 		}
-	
+		
 	});
 	
 	/* -------------------------------------------------------------------- */
@@ -368,7 +356,7 @@
 	
 	implementation.add(mixins.serialized, {
 		
-		name: "userdata",
+		name : "userdata",
 		
 		/* Necessary methods */
 		
@@ -388,7 +376,7 @@
 		
 		/* Internal members */
 		
-		storeName: "ssw",
+		storeName : publicInterfaceName,
 		
 		specificInit : function () {
 			/* Create a non-existing element and append it to the root element */
@@ -411,7 +399,7 @@
 	
 	implementation.add(mixins.serialized, {
 		
-		name: "cookie",
+		name : "cookie",
 		
 		/* Necessary methods */
 		
@@ -436,7 +424,7 @@
 		
 		/* Internal members */
 		
-		cookieName: "ssw",
+		cookieName : publicInterfaceName,
 		
 		specificClear : function () {
 			this.deleteCookie(this.cookieName);

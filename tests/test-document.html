@@ -1,36 +1,4 @@
 <script type="text/javascript" src="../ssw.js"></script>
 <script type="text/javascript">
 document.write(new Date);
-
-/*
-document.write("<p>get foo: " + ssw.get("foo") + "<\/p>");
-document.write("<p>add foo<\/p>");
-ssw.add("foo", "bar");
-document.write("<p>get foo: " + ssw.get("foo") + "<\/p>");
-*/
-
-if (!sessionStorage.container) {
-	document.write("<p>set up container<\/p>");
-	//sessionStorage.container = {};
-	sessionStorage.setItem("container", {});
-}
-
-/*
-//delete sessionStorage.container;
-document.write("<p>get foo: " + sessionStorage.container.foo + "<\/p>");
-document.write("<p>add foo<\/p>");
-sessionStorage.container.foo = "bar";
-document.write("<p>get foo: " + sessionStorage.container.foo + "<\/p>");
-*/
-
-document.write("<p>get foo: " + sessionStorage.getItem("container").foo + "<\/p>");
-document.write("<p>set container with foo<\/p>");
-sessionStorage.setItem("container", { foo : "bar" });
-document.write("<p>get foo: " + sessionStorage["container"].foo + "<\/p>");
-document.write("<p>get foo: " + sessionStorage.container.foo + "<\/p>");
-document.write("<p>get foo: " + sessionStorage.getItem("container").foo + "<\/p>");
-
-sessionStorage.setItem("simple", "simple string");
-
-
 </script>
