@@ -201,15 +201,15 @@ YUI({
 				w.ssw.add(key, originalValue);
 				
 				var savedValue = w.ssw.get(key);
-				A.areSame(savedValue.string, originalValue.string, "saving a string failed");
-				A.areSame(savedValue.number, originalValue.number, "saving a number failed");
-				A.areSame(savedValue.booleanK, originalValue.booleanK, "saving a boolean failed");
-				A.areSame(savedValue.functionK, originalValue.functionK, "saving a function failed");
+				A.areSame(originalValue.string, savedValue.string, "saving a string failed");
+				A.areSame(originalValue.number, savedValue.number, "saving a number failed");
+				A.areSame(originalValue.booleanK, savedValue.booleanK, "saving a boolean failed");
+				A.areSame(originalValue.functionK, savedValue.functionK, "saving a function failed");
 				
-				A.areSame(savedValue.regexp, originalValue.regexp, "saving a RegExp object failed");
-				A.areSame(savedValue.documentNode, originalValue.documentNode, "saving a DOM Document node failed");
-				A.areSame(savedValue.elementNode, originalValue.elementNode, "saving a DOM Element node failed");
-				A.areSame(savedValue.objectConstructor, originalValue.objectConstructor, "saving a core object failed");
+				A.areSame(originalValue.regexp, savedValue.regexp, "saving a RegExp object failed");
+				A.areSame(originalValue.documentNode, savedValue.documentNode, "saving a DOM Document node failed");
+				A.areSame(originalValue.elementNode, savedValue.elementNode, "saving a DOM Element node failed");
+				A.areSame(originalValue.objectConstructor, savedValue.objectConstructor, "saving a core object failed");
 			}			
 		};
 		
