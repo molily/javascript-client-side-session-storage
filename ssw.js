@@ -99,6 +99,7 @@
 			head.appendChild(el);
 		}		
 	};
+	
 
 	/* ******************************************************************** */
 	/* Serializers */
@@ -190,21 +191,15 @@
 			if (!imp || !imp.available) {
 				imp = false;
 			}
-			this.setup(imp);
+			return this.setup(imp);
 		},
 		
 		/* Setup and initialize an implementation */
 		
-		setup : function (imp) {
-			/* Break if there's already a global object with this name */
-			if (publicInterfaceName in window) {
-				return false;
-			}
-			
-			/* If no implementation is supported, set the global object to false and break */
+		setup : function (imp) {			
+			/* If the implementation is not supported, set the global object to false and break */
 			if (!imp) {
-				window[publicInterfaceName] = false;
-			 	return false;
+				return window[publicInterfaceName] = false;
 			 }
 
 			/* Call the specific init function of the implementation */
@@ -225,6 +220,12 @@
 			});
 			
 			/* Finally, create the global object */
+			if (window.location.href.indexOf("test-document.html") == -1) {
+				alert("wrong window object");
+			}
+			if (typeof publicInterface != "object") {
+				alert("no public interface");
+			}
 			return window[publicInterfaceName] = publicInterface;
 		}
 	
@@ -515,5 +516,5 @@
 	 */
 	delete implementation;
 
-	/* Call the anonymous function */
+	/* Call the anonymous function: */
 })();
