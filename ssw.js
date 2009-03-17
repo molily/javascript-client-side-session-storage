@@ -187,7 +187,7 @@
 		
 		force : function (name) {
 			var imp = this.get(name);
-			if (!imp.available) {
+			if (!imp || !imp.available) {
 				imp = false;
 			}
 			this.setup(imp);
@@ -198,13 +198,13 @@
 		setup : function (imp) {
 			/* Break if there's already a global object with this name */
 			if (publicInterfaceName in window) {
-				return;
+				return false;
 			}
 			
 			/* If no implementation is supported, set the global object to false and break */
 			if (!imp) {
 				window[publicInterfaceName] = false;
-			 	return;
+			 	return false;
 			 }
 
 			/* Call the specific init function of the implementation */
@@ -225,7 +225,7 @@
 			});
 			
 			/* Finally, create the global object */
-			window[publicInterfaceName] = publicInterface;
+			return window[publicInterfaceName] = publicInterface;
 		}
 	
 	};

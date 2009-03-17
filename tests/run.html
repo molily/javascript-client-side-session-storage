@@ -1,4 +1,7 @@
+<!DOCTYPE html>
+<html>
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>SSW Tests</title>
 <script type="text/javascript" src="./yui/build/yui/yui.js"></script>
 <style type="text/css">
@@ -37,19 +40,14 @@ YUI({
 	useBrowserConsole : false
 }).use("event", "node", "yuitest", "console", function (Y) {
 	
+	/* Namespace */
+	
 	Y.namespace("sswTest");
 	
-	/* Mixin helper */
 	
-	function mixin (source, target) {
-		for (var name in source) {
-			if (source.hasOwnProperty(name)) {
-				target[name] = source[name];
-			}
-		}
-		return target;
-	}
+	/* Helper Functions */
 		
+	
 	/* Helper for tests consisting of two parts with a reload between them */
 	
 	Y.sswTest.reloadHandler = new Function;
@@ -57,15 +55,17 @@ YUI({
 	Y.sswTest.twoParts = function (test, func1, func2) {
 		func1();
 		Y.sswTest.reloadHandler = function () {
-			//alert("reload handler fired");
+			//Y.log("Reload handler fired");
 			test.resume(function () {
-				//alert("resuming test\n" + test.name);
+				//Y.log("Resuming test: " + test.name);
 				func2();
 			});
 		};
 		Y.sswTest.window.location.reload();
+		//Y.log("Delay test" + test.name + ", waiting for reload completion");
 		test.wait();
 	};
+	
 	
 	/* Setup */
 	
@@ -79,26 +79,10 @@ YUI({
 		
 		/* Setup load handler */
 		
-		/*
-		// Doesn't work since the window object changes
-		Y.sswTest.window.onload = function () {
-			alert("iframe load handler fired");
-		};
-		*/
-		
-		/*
-		// This doesn't seem to work.
 		Y.on("load", function () {
-			alert("iframe load handler fired");
-			Y.sswTest.reload.handler();
-		}, "#iframe");
-		*/
-		
-		// Old-School style works
-		document.getElementById("iframe").onload = function () {
 			//alert("iframe load handler fired");
 			Y.sswTest.reloadHandler();
-		};
+		}, "#iframe");
 		
 		/* Create Suite */
 		
@@ -109,10 +93,19 @@ YUI({
 		
 		var A = Y.Assert;
 		
-		/* Helper Function */
+		/* Helper Function to Add a Testcase */
 		
-		function addTestcase (o) {
+		function addTestcase (o, template) {
+			if (o) {
+				Y.mix(o, template);
+			}
 			testsuite.add(new Y.Test.Case(o));
+		}
+		
+		/* Helper function to Clear the Store */
+		
+		function clear () {
+			w.ssw.clear();
 		}
 		
 		/* Ladies and Gentlemen: The Tests. */
@@ -137,15 +130,15 @@ YUI({
 				var s = w.ssw.get();
 				A.isObject(s);
 				var memberFound = false;
-				for (var propName in s) {
-					/* This loop doesn't use hasOwnProperty since the object shouldn't inherit members
-					via the prototype chain and the scipt should not augment Object.prototype. */
+				Y.Object.each(s, function (propName) {
+					/* Don't check for hasOwnProperty since the object shouldn't inherit members
+					via the prototype chain and ssw.js should not augment Object.prototype. */
 					memberFound = true;
 					Y.log("Found Member on empty object: " + propName + ", own property? " + s.hasOwnProperty(propName));
-				}
+				}, s, true);
 				if (memberFound) {
 					A.isFalse(memberFound);
-				}			
+				}
 			}
 		});
 			
@@ -153,19 +146,21 @@ YUI({
 		
 		var saveTests = {
 			testSaveString : function () {
-				var key = "string",
+				var	key = "string",
 					originalValue = "test";
+					
 				w.ssw.add(key, originalValue);
 				A.areSame(originalValue, w.ssw.get(key));
 			},
 			testSaveNumber : function () {
-				var key = "number",
+				var	key = "number",
 					originalValue = 123.456;
+					
 				w.ssw.add(key, originalValue);
 				A.areSame(originalValue, w.ssw.get(key));
 			},
 			testSaveBoolean : function () {
-				var key = "booleanK",
+				var	key = "booleanK",
 					originalValue = true;
 					
 				w.ssw.add(key, originalValue);
@@ -176,10 +171,86 @@ YUI({
 				A.areSame(originalValue, w.ssw.get(key));
 			},
 			testSaveArray : function () {
-				var key = "array",
+				var	key = "array",
 					originalValue = [ 1.1, "2", true ];
+				
 				w.ssw.add(key, originalValue);
 				Y.ArrayAssert.itemsAreSame(originalValue, w.ssw.get(key));
+			},
+			testSaveSingleObject : function () {
+				w.ssw.clear();
+				
+				var	key = "object",
+					originalValue = {
+						string : "test",
+						number : 123.456,
+						booleanK : false,
+						functionK : new Function,
+						regexp : new RegExp,
+						date : new Date,
+						documentNode : w.document,
+						elementNode : document.createElement,
+					};
+				w.ssw.add(key, originalValue);
+				
+				var savedValue = w.ssw.get(key);
+				A.areSame(savedValue.string, originalValue.string, "saving a string failed");
+				A.areSame(savedValue.number, originalValue.number, "saving a number failed");
+				A.areSame(savedValue.booleanK, originalValue.booleanK, "saving a boolean failed");
+				A.areSame(savedValue.functionK, originalValue.functionK, "saving a function failed");
+				A.areSame(savedValue.regexp, originalValue.regexp, "saving a RegExp object failed");
+				A.areSame(savedValue.documentNode, originalValue.documentNode, "saving a DOM Document node failed");
+				A.areSame(savedValue.elementNode, originalValue.elementNode, "saving a DOM Element node failed");
+			}			
+		};
+		
+		/* ------------------------------------------------------------------------------------------------ */
+		
+		var transferTests = {
+			testTransferString : function () {
+				var	key = "string",
+					value = "test";
+				Y.sswTest.twoParts(this, function () {
+					w.ssw.add(key, value);
+				}, function () {
+					A.areSame(value, w.ssw.get(key));
+				});
+			},
+			testTransferNumber : function () {
+				var	key = "string",
+					value = 123.456;
+				Y.sswTest.twoParts(this, function () {
+					w.ssw.add(key, value);
+				}, function () {					
+					A.areSame(value, w.ssw.get(key));
+				});
+			},
+			testTransferBoolean : function () {
+				var	key = "boolean",
+					originalValue = true;
+				
+				Y.sswTest.twoParts(this, function () {
+					w.ssw.add(key, originalValue);
+				}, function () {
+					A.areSame(originalValue, w.ssw.get(key));
+				});
+				
+				Y.sswTest.twoParts(this, function () {
+					originalValue = false;
+					w.ssw.add(key, originalValue);
+				}, function () {
+					A.areSame(originalValue, w.ssw.get(key));
+				});
+			},
+			testTransferArray : function () {
+				var key = "array",
+					originalValue = [ 1.1, "2", true ];
+				
+				Y.sswTest.twoParts(this, function () {
+					w.ssw.add(key, originalValue);
+				}, function () {
+					Y.ArrayAssert.itemsAreSame(originalValue, w.ssw.get(key));
+				});
 			},
 			testSaveSingleObject : function () {
 				w.ssw.clear();
@@ -194,81 +265,63 @@ YUI({
 						documentNode : w.document,
 						elementNode : document.createElement,
 					};
-				w.ssw.add(key, originalValue);
-				var savedValue = w.ssw.get(key);
-				A.areSame(savedValue.string, originalValue.string);
+				
+				Y.sswTest.twoParts(this, function () {
+					w.ssw.add(key, originalValue);
+				}, function () {
+					Y.ObjectAssert.hasAll(, );
+					var savedValue = w.ssw.get(key);
+					A.areSame(savedValue.string, originalValue.string, "saving a string failed");
+					A.areSame(savedValue.number, originalValue.number, "saving a number failed");
+					A.areSame(savedValue.booleanK, originalValue.booleanK, "saving a boolean failed");
+					A.areSame(savedValue.functionK, originalValue.functionK, "saving a function failed");
+					A.areSame(savedValue.regexp, originalValue.regexp, "saving a RegExp object failed");
+					A.areSame(savedValue.documentNode, originalValue.documentNode, "saving a DOM Document node failed");
+					A.areSame(savedValue.elementNode, originalValue.elementNode, "saving a DOM Element node failed");
+				});
 			}			
 		};
-		
-		/* ------------------------------------------------------------------------------------------------ */
-		
-		var transferTests = {
-			testTransferString : function () {
-				var key = "string",
-					value = "test";
-				Y.sswTest.twoParts(this, function () {
-					w.ssw.add(key, value);
-				}, function () {
-					A.areSame(value, w.ssw.get(key));
-				});
-			},
-			testTransferNumber : function () {
-				var key = "string",
-					value = 123.456;
-				Y.sswTest.twoParts(this, function () {
-					w.ssw.add(key, value);
-				}, function () {					
-					A.areSame(value, w.ssw.get(key));
-				});
-			},
-			testTransferBoolean : function () {
-				var key = "boolean",
-					originalValue = true;
-					
-				w.ssw.add(key, originalValue);
-				A.areSame(originalValue, w.ssw.get(key));
 				
-				originalValue = false;
-				w.ssw.add(key, originalValue);
-				A.areSame(originalValue, w.ssw.get(key));
-			},
-			testTransferArray : function () {
-				var key = "array",
-					originalValue = [ 1.1, "2", true ];
-				w.ssw.add(key, originalValue);
-				Y.ArrayAssert.itemsAreSame(originalValue, w.ssw.get(key));
-			}
-		};
-		
 		/* ------------------------------------------------------------------------------------------------ */
 		
-		addTestcase(mixin(saveTests, {
-			name : "Saving and Reading values, detected implementation, without reloads",
-			setUp : function () {
-				w.ssw.clear();
-			},
-			tearDown : function () {
-				w.ssw.clear();
+		function testImplementation (implementationName) {
+			if (implementationName) {
+			   	w.oldssw = w.ssw;
+			   	w.ssw.forceImplementation(implementationName);
+			} else {
+				implementationName = w.ssw.implementation.name + " (auto-detected)";
 			}
-		}));
+			if (w.ssw) {
+				Y.log("Testing Implementation " + implementationName);
+				
+				addTestcase({
+					name : "Testing implementation »" + implementationName + "«: Saving and Reading different values without reloads",
+					setUp : clear,
+					tearDown : clear
+				}, saveTests);
+				
+				addTestcase({
+					name : "Testing implementation »" + implementationName + "«: Transfering different values with reloads",
+					setUp : clear,
+					tearDown : clear
+				}, transferTests);
+				
+			} else {
+				Y.log("Implementation " + implementationName + " not supported");
+				if (w.oldssw) {
+					// Restore object
+					w.ssw = w.oldssw;
+					delete w.oldssw;
+				}
+			}
+		}
 
 		/* ------------------------------------------------------------------------------------------------ */
-
-		addTestcase(mixin(transferTests, {
-			name : "Saving and Reading different values, detected implementation, with reloads",
-			setUp : function () {
-				w.ssw.clear();
-			},
-			tearDown : function () {
-				w.ssw.clear();
-			}
-		}));
 		
-		/* ------------------------------------------------------------------------------------------------ */
-		
-		
-		/* ------------------------------------------------------------------------------------------------ */
-		/* ------------------------------------------------------------------------------------------------ */
+		var implementationNames = [null, "domstorage", "userdata", "windowname", "cookie"];
+		for (var index in implementationNames) {
+		  	testImplementation(implementationNames[index]);
+		}
 		
 		/* ************************************************************************************************ */
 		
