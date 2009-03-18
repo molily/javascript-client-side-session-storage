@@ -172,16 +172,18 @@
 		/* Auto-Detect available implementation */
 		
 		detect : function () {
-			/* Iterate over implementation list and find the first supported implementation */
-			var imp = helper.forEach(this.list, function (imp) {
+			/* Iterate over implementation list, check if the implementation is available,
+			set the available property accordingly and make use of the first supported implementation */
+			var availableImp = null;
+			helper.forEach(this.list, function (imp) {
 				if (imp.isAvailable()) {
 					imp.available = true;
-					return imp;
+					availableImp = availableImp || imp;
 				} else {
 					imp.available = false;
 				}
 			});
-			this.setup(imp);
+			this.setup(availableImp);
 		},
 		
 		/* Force an implementation (override auto-detect, but check availability) */
@@ -196,12 +198,12 @@
 		
 		/* Setup and initialize an implementation */
 		
-		setup : function (imp) {			
+		setup : function (imp) {
 			/* If the implementation is not supported, set the global object to false and break */
 			if (!imp) {
 				return window[publicInterfaceName] = false;
 			 }
-
+			
 			/* Call the specific init function of the implementation */
 			imp.init();
 			
@@ -284,7 +286,8 @@
 			},
 
 			saveBox : function () {
-				this.save(this.serializer.serialize(this.box));
+				var serializedString = this.serializer.serialize(this.box);
+				this.save(serializedString);
 			},
 
 			/* Public members */
@@ -317,7 +320,7 @@
 				this.saveBox();
 				if (this.specificClear) {
 					this.specificClear();
-				}				
+				}
 			}
 		}
 	};
@@ -507,7 +510,7 @@
 	
 	/* ******************************************************************** */
 	
-	/* Call auto-detect */	
+	/* Call auto-detect */
 	implementation.detect();
 	
 	/* 

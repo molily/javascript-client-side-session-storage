@@ -40,18 +40,39 @@ YUI({
 	useBrowserConsole : false
 }).use("event", "node", "yuitest", "console", function (Y) {
 	
+	/* ******************************************************************************************* */
 	/* Namespace */
 	
 	Y.namespace("sswTest");
 	
+	/* ******************************************************************************************* */
+	/* General Setup */
 	
-	/* Helper Functions */
+	Y.sswTest.setup = function () {
 		
+		/* Setup console */
+		var console = new Y.Console({
+			verbose : true,
+			newestOnTop : false
+		});
+		console.render('#log');
+		
+		/* Get the window object of the test document */
+		Y.sswTest.window = window.frames.iframe;
+		
+		/* Setup load handler */
+		Y.on("load", function () {
+			//Y.log("iframe load handler fired");
+			Y.sswTest.reloadHandler();
+		}, "#iframe");
+		
+	};
 	
+	/* ******************************************************************************************* */
 	/* Helper for tests consisting of two parts with a reload between them */
 	
 	Y.sswTest.reloadHandler = new Function;
-
+	
 	Y.sswTest.twoParts = function (test, func1, func2) {
 		func1();
 		Y.sswTest.reloadHandler = function () {
@@ -64,69 +85,70 @@ YUI({
 		};
 		Y.sswTest.window.location.reload();
 		//Y.log("Delay test" + test.name + ", waiting for reload completion");
-		test.wait(3000);
+		test.wait(1000);
+	};
+
+	/* ******************************************************************************************* */
+	/* Helper function for adding a testcase to the suite */
+	
+	Y.sswTest.addTestCase = function (o, template) {
+		if (template) {
+			Y.mix(o, template);
+		}
+		var testCase = new Y.Test.Case(o);
+		Y.sswTest.testSuite.add(testCase);
+		//Y.sswTest.testCases.push(o);
+	}
+	
+	/* ******************************************************************************************* */
+	/* Helper function for clearing the storage */
+	Y.sswTest.clear = function () {
+		Y.sswTest.window.ssw.clear();
 	};
 	
+	/* ******************************************************************************************* */
+	/* Create Suite */
 	
-	/* Setup */
+	Y.sswTest.testSuite = new Y.Test.Suite("Session Storage Wrapper Unit Tests");
+	//Y.sswTest.testCases = [];
 	
-	Y.sswTest.setup = function () {
+	/* ******************************************************************************************* */
+	/* Define Tests */
+	
+	Y.sswTest.defineTests = function () {
 		
-		/* Get the window object of the test document */
-		
-		var w = window.frames.iframe;
-		Y.sswTest.window = w;
-		Y.log("Using Implementation: " + w.ssw.implementation.name);
-		
-		/* Setup load handler */
-		
-		Y.on("load", function () {
-			//alert("iframe load handler fired");
-			Y.sswTest.reloadHandler();
-		}, "#iframe");
-		
-		/* Create Suite */
-		
-		var testsuite = new Y.Test.Suite("Session Storage Wrapper Unit Tests");
-		Y.sswTest.suite = testsuite;
+		/* Window Shortcut */
+		var w = Y.sswTest.window;
 		
 		/* Assertions Shortcut */
-		
 		var A = Y.Assert;
 		
-		/* Helper Function to Add a Testcase */
-		
-		function addTestcase (o, template) {
-			if (o) {
-				Y.mix(o, template);
+		/* Setup helper */
+		var setup = function () {
+			if (!this.initialImplementationForced) {
+				w.ssw.forceImplementation(this.implementationName);
+				this.initialImplementationForced = true;
 			}
-			testsuite.add(new Y.Test.Case(o));
-		}
-		
-		/* Helper function to Clear the Store */
-		
-		function clear () {
-			w.ssw.clear();
-		}
+		};
 		
 		/* Ladies and Gentlemen: The Tests. */
 		
-		/* ************************************************************************************************ */
-        
-		addTestcase({
+		/* ------------------------------------------------------------------------------------------------ */
+		
+		Y.sswTest.addTestCase({
 			name : "Implementation Auto-Detection (global interface is exposed)",
+			tearDown : Y.sswTest.clear,
+			
 			testDetection : function () {
 				A.isObject(w.ssw);
 			} 
 		});
 		
 		/* ------------------------------------------------------------------------------------------------ */
-
-		addTestcase({
+		
+		Y.sswTest.addTestCase({
 			name : "Getting an empty storage object",
-			setUp : function () {
-				w.ssw.clear();
-			},
+			
 			testGet : function () {
 				var s = w.ssw.get();
 				A.isObject(s);
@@ -142,10 +164,14 @@ YUI({
 				}
 			}
 		});
-			
+		
 		/* ------------------------------------------------------------------------------------------------ */
 		
-		var saveTests = {
+		Y.sswTest.saveTests = {
+			name : "to be announced",
+			
+			setUp : setup,
+			tearDown : Y.sswTest.clear,
 			
 			testSaveString : function () {
 				var	key = "string",
@@ -183,39 +209,65 @@ YUI({
 				Y.ArrayAssert.itemsAreSame(originalValue, w.ssw.get(key));
 			},
 			
-			testSaveSingleObject : function () {
-				w.ssw.clear();
-				
+			testSaveSimpleObject : function () {
 				var	key = "object",
 					originalValue = {
 						string : "test",
 						number : 123.456,
 						booleanK : false,
-						functionK : new Function,
-						regexp : new RegExp,
-						date : new Date,
-						documentNode : w.document,
-						elementNode : document.createElement,
-						objectConstructor : Object
+						nestedObject : {
+							string : "test",
+							number : 123.456,
+							booleanK : false,
+						}
 					};
 				w.ssw.add(key, originalValue);
 				
 				var savedValue = w.ssw.get(key);
+				
+				Y.ObjectAssert.ownsAll(originalValue, savedValue, "not all members have been transferred");
 				A.areSame(originalValue.string, savedValue.string, "saving a string failed");
 				A.areSame(originalValue.number, savedValue.number, "saving a number failed");
 				A.areSame(originalValue.booleanK, savedValue.booleanK, "saving a boolean failed");
-				A.areSame(originalValue.functionK, savedValue.functionK, "saving a function failed");
 				
+				Y.ObjectAssert.ownsAll(originalValue.nestedObject, savedValue.nestedObject, "not all members have been transferred");
+				A.areSame(originalValue.nestedObject.string, savedValue.nestedObject.string, "saving a string failed");
+				A.areSame(originalValue.nestedObject.number, savedValue.nestedObject.number, "saving a number failed");
+				A.areSame(originalValue.nestedObject.booleanK, savedValue.nestedObject.booleanK, "saving a boolean failed");
+				
+			},
+			
+			saveSpecialObjects: function () {
+				var	key = "object",
+					originalValue = {
+						functionK: new w.Function("'This is a function';"),
+						regexp: new w.RegExp("regular expression"),
+						date: new w.Date,
+						documentNode: w.document,
+						elementNode: w.document.documentElement,
+						objectConstructor : Object
+					};
+				
+				w.ssw.add(key, originalValue);
+				
+				var savedValue = w.ssw.get(key);
+				A.areSame(originalValue.functionK, savedValue.functionK, "saving a function failed");
 				A.areSame(originalValue.regexp, savedValue.regexp, "saving a RegExp object failed");
+				A.areSame(originalValue.date, savedValue.date, "saving a Date object failed");
 				A.areSame(originalValue.documentNode, savedValue.documentNode, "saving a DOM Document node failed");
 				A.areSame(originalValue.elementNode, savedValue.elementNode, "saving a DOM Element node failed");
 				A.areSame(originalValue.objectConstructor, savedValue.objectConstructor, "saving a core object failed");
-			}			
+			}
+			
 		};
 		
 		/* ------------------------------------------------------------------------------------------------ */
 		
-		var transferTests = {
+		Y.sswTest.transferTests = {
+			name : "to be announced",
+			
+			setUp : setup,
+			tearDown : Y.sswTest.clear,
 			
 			testTransferString : function () {
 				var	key = "string",
@@ -232,7 +284,7 @@ YUI({
 					value = 123.456;
 				Y.sswTest.twoParts(this, function () {
 					w.ssw.add(key, value);
-				}, function () {					
+				}, function () {
 					A.areSame(value, w.ssw.get(key));
 				});
 			},
@@ -267,7 +319,6 @@ YUI({
 			},
 			
 			testTransferSimpleObject : function () {
-				w.ssw.clear();
 				var	key = "object",
 					originalValue = {
 						string : "test",
@@ -298,12 +349,11 @@ YUI({
 			},
 			
 			testTransferPrimitivesAsObjects : function () {
-				w.ssw.clear();
 				var	key = "object",
 					originalValue = {
-						string : new String("test"),
-						number : new Number(123.456),
-						booleanK : new Boolean(false),
+						string : new w.String("test string"),
+						number : new w.Number(123.456),
+						booleanK : new w.Boolean(false),
 					};
 				
 				Y.sswTest.twoParts(this, function () {
@@ -317,23 +367,22 @@ YUI({
 					A.areSame(originalValue.booleanK, savedValue.booleanK, "transferring a boolean object failed");
 				});
 			},
+			/*
 			_should : {
 				error : {
 					testTransferHostObject : "Complex host objects cannot be transferred"
 				}
 			},
+			*/
 			transferSpecialObjects: function () {
-				w.ssw.clear();
 				var	key = "object",
 					originalValue = {
-						functionK: function() {
-							"This is a function";
-						},
-					regexp: /regular expression/,
-					date: new Date,
-					documentNode: w.document,
-					elementNode: document.createElement
-				};
+						functionK: new w.Function("'This is a function';");,
+						regexp: new w.RegExp("regular expression"),
+						date: new w.Date,
+						documentNode: w.document,
+						elementNode: w.document.documentElement
+					};
 				
 				Y.sswTest.twoParts(this, function () {
 					w.ssw.add(key, originalValue);
@@ -342,85 +391,95 @@ YUI({
 					
 					A.areEqual(originalValue.functionK, savedValue.functionK, "saving a function failed");
 					A.areEqual(originalValue.regexp, savedValue.regexp, "saving a RegExp object failed");
+					A.areEqual(originalValue.date, savedValue.date, "saving a Date object failed");
 					A.areEqual(originalValue.documentNode, savedValue.documentNode, "saving a DOM Document node failed");
 					A.areEqual(originalValue.elementNode, savedValue.elementNode, "saving a DOM Element node failed");
 				});
 			}
-
-		};
-				
-		/* ------------------------------------------------------------------------------------------------ */
 		
-		function testImplementation (implementationName) {
-			Y.log("Testing Implementation " + implementationName);
+		};
+		
+	};
+	
+	/* ******************************************************************************************* */
+	/* Build TestCases based on templates for every implementation */
+	
+	Y.sswTest.buildTestCases = function () {
+		var implementationNames = [null, "domstorage", "userdata",  "cookie", "windowname"];
+		Y.Array.each(implementationNames, function (implementationName) {
+			Y.sswTest.buildImplementationTestCases(implementationName);
+		});
+	};
+	
+	/* ******************************************************************************************* */
+	/* Helper for building TestCases for every implementation */
+	
+	Y.sswTest.buildImplementationTestCases = function (implementationName) {
+		Y.log("Building Tests for Implementation " + implementationName);
+		
+		var	displayImplementationName,
+			w = Y.sswTest.window;
+		
+		if (implementationName) {
+		
+			//Y.log("Trying to forceImplementation to " + implementationName);
+			var	oldPublicInterface = w.ssw,
+				result = w.ssw.forceImplementation(implementationName);
 			
-			function setupTestcase () {
-				//Y.log("setupTestcase: " + this.implementationName);
-				
-				if (this.implementationName) {
-					//Y.log("forceImplementation to " + this.implementationName);
-					var result = w.ssw.forceImplementation(this.implementationName);
-					//Y.log("forceImplementation result: " + result);
-					
-					if (!result) {
-						Y.log("Implementation " + this.implementationName + " not supported");
-						
-						// Reload to rebuild the public interface
-						w.location.reload();
-						return;
-					}
-				} else {
-					// Auto-detect
-					//Y.log("Use auto-detected implementation");
-					this.implementationName = w.ssw.implementation.name;
-				}
-				w.ssw.clear();
+			if (!result) {
+				Y.log("Implementation " + implementationName + " not supported, cannot test it", "warn");
+				// Restore the old public interface
+				w.ssw = oldPublicInterface;
+				// Break
+				return false;
+			}
+			displayImplementationName = implementationName;
+			
+		} else {
+		
+			//Y.log("Use auto-detected implementation");
+			if (w.ssw) {
+				implementationName = w.ssw.implementation.name;
+				displayImplementationName = implementationName + " (auto-detected)";
+			} else {
+				Y.log("Auto-detect failed, apparently no implementation is not supported", "warn");
+				// Break
+				return false;
 			}
 			
-			var displayImplementationName = implementationName || "auto-detect";
-			
-			addTestcase({
-				implementationName : implementationName,
-				name : "Testing " + displayImplementationName + ": Saving and Reading different values without reloads",
-				setUp : setupTestcase,
-				tearDown : clear
-			}, saveTests);
-			
-			addTestcase({
-				implementationName : implementationName,
-				name : "Testing " + displayImplementationName + ": Transfering different values with reloads",
-				setUp : setupTestcase,
-				tearDown : clear
-			}, transferTests);
-			
-		}
-
-		/* ------------------------------------------------------------------------------------------------ */
-		
-		var implementationNames = [null, "domstorage", "userdata", "windowname", "cookie"];
-		for (var index in implementationNames) {
-		  	testImplementation(implementationNames[index]);
 		}
 		
-		/* ************************************************************************************************ */
+		Y.log("Adding Tests for Implementation " + displayImplementationName);
 		
-	};
+		// Implementation found and supported, add testcases for the implementation
+		
+		Y.sswTest.addTestCase({
+			implementationName : implementationName, // needed to force the implementation at the begin and after reloads
+			name : "Testing " + displayImplementationName + ": Saving and Reading different values without reloads"
+		}, Y.sswTest.saveTests);
+		
+		Y.sswTest.addTestCase({
+			implementationName : implementationName, // needed to force the implementation at the begin and after reloads
+			name : "Testing " + displayImplementationName + ": Transfering different values with reloads"
+		}, Y.sswTest.transferTests);
+		
+	}
 	
-	/* Run the tests */
+	/* ******************************************************************************************* */
+	/* Run test suite */
 	
 	Y.sswTest.run = function () {
-		var r = new Y.Console({
-			verbose : true,
-			newestOnTop : false
-		});
-		Y.Test.Runner.add(Y.sswTest.suite);
+		Y.Test.Runner.clear(); 
+		Y.Test.Runner.add(Y.sswTest.testSuite);
 		Y.Test.Runner.run();
-		r.render('#log');
 	};
 	
-	/* Start */
+	/* ******************************************************************************************* */
+	/* Main */
 	
 	Y.sswTest.setup();
+	Y.sswTest.defineTests();
+	Y.sswTest.buildTestCases();
 	Y.sswTest.run();
 	
 });
