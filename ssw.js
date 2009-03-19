@@ -77,27 +77,22 @@
 		},
 		
 		/*
-		 * Load an external JavaScript file by inserting a script element
+		 * Load an external JavaScript
 		 */
 		
 		loadScript : function (uri) {
-			/*
-			if (document.write) {
-				try {
-					document.write("<script type='text/javascript' src='" + uri + "'><\/script>");
-				} catch (e) {
-					throw new Error("External script could not be loaded because document.write threw an exception");
-				}
+			/* Load and evaluate the script with synchronous XMLHttpRequest.
+			That's really ugly, but there's no other reliable solution.
+			Otherwise it cannot be guaranteed that the dependancy is fully loaded
+			and executed by the time the public methods of this script are used. */
+			var req = (window.XMLHttpRequest ? new XMLHttpRequest : (window.ActiveXObject ? new ActiveXObject('Microsoft.XMLHTTP') : false));
+			if (!req) {
+				return false;
 			}
-			*/
-			/* This loads the script asynchronously and it cannot be guaranteed that the script
-			is fully loaded and executed when the SSW library is used. */				
-			var head = document.getElementsByTagName("head")[0],
-				el = document.createElement("script");
-			el.type = "text/javascript";
-			el.src = uri;
-			head.appendChild(el);
-		}		
+			req.open('GET', uri, false);
+			req.send(null);
+			eval(req.responseText);
+		}
 	};
 	
 
@@ -112,7 +107,7 @@
 			
 			/* URI of the JSON script */
 			
-			scriptUri: "../json2.js",
+			scriptUri : "./json2.js",
 			
 			init : function () {
 				/* Load additional script if there's no native JSON implementation */
@@ -222,12 +217,6 @@
 			});
 			
 			/* Finally, create the global object */
-			if (window.location.href.indexOf("test-document.html") == -1) {
-				alert("wrong window object");
-			}
-			if (typeof publicInterface != "object") {
-				alert("no public interface");
-			}
 			return window[publicInterfaceName] = publicInterface;
 		}
 	
@@ -255,8 +244,7 @@
 			/* Initialization */
 			
 			init : function () {
-				/* Initialize serializer. For JSON, this loads the external script file asynchronously,
-				so we cannot use the serializer during the initialization. */
+				/* Initialize serializer. */
 				this.serializer.init();
 				
 				/* Call the specific init method */
