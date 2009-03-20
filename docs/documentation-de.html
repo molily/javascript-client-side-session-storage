@@ -216,33 +216,70 @@ Den Kanal können Sie sich als Nadelöhr vorstellen, durch das nur die Informati
 
 <p>Zur Serialisierung wurden in der Vergangenheit verschiedene Verfahren benutzt, die manche JavaScript-Daten übertragen konnten, andere aber nicht oder nicht zuverlässig. Dabei existiert ein De-facto-Standard, mit dem sich vielfältige strukturierte Daten zuverlässig serialisieren lassen: die <strong>JavaScript Object Notation (JSON)</strong>. JSON hat mittlerweile auch jenseits von JavaScript Verbreitung gefunden und ist das Format der Wahl, wenn man einem JavaScript strukturierte Daten zur Verfügung stellen will.</p>
 
-<p>JSON kann folgende Datenstrukturen direkt ausdrücken:</p>
+<p>Für die Serialisierung von Daten in einen String im JSON-Format und die Zurückwandlung dieses Strings in JavaScript-Daten wird das Helferscript json2.js von Douglas Crockford verwendet, siehe <a href="http://www.json.org/js.html">JSON in JavaScript</a>. Es bietet die zwei JavaScript-Funktionen <code>JSON.stringify</code> und <code>JSON.parse</code> an.</p>
+
+<p>Der große Clou bei der Wahl von JSON als Übertragungsformat ist folgender: Neuere Browser haben die genannten Funktionen <code>JSON.stringify</code> und <code>JSON.parse</code> bereits »serienmäßig« eingebaut. Man muss in diesem Fall kein zusätzliches JavaScript laden, das die Funktionalität bereitstellt. Der Vorteil dieser sogenannten »nativen« Umsetzung ist vor allem Zuverlässigkeit und Geschwindigkeit. Auch an dieser Stelle machen wir von den neuen Möglichkeiten der Browser Gebrauch. Wenn diese noch nicht verfügbar sind, laden wir automatisch das benötigte Script nach.</p>
+
+<h2>Fähigkeiten und Grenzen von JSON</h2>
+
+<p>JSON als Programmiersprachen-übergreifendes, textbasiertes Datenformat ist zu unterscheiden von Objekt-Literalen in JavaScript (ECMAScript).</p>
+
+<ul>
+<li>Objekt-Literale können alle möglichen JavaScript-Ausdrücke enthalten und alle möglichen JavaScript-Objekte beinhalten. Sie existieren im Speicher, während ein Dokument angezeigt wird, können aber nicht verlustlos über einen textbasierten Kanal wie JSON an ein anderes Dokument übertragen werden.</p>
+<li>Das Übertragungsformat JSON ist ein Unterformat von Objekt-Literalen in ECMAScript, das nur gewisse Objekttypen speichern kann &ndash; in erster Linie diejenigen, die sich einfach und eindeutig serialisieren lassen.</li>
+</ul>
+
+<p>JSON kann folgende JavaScript-Datenstrukturen direkt ausdrücken:</p>
 
 <ul>
 <li>Object-Objekte, in anderen Sprachen Hashes oder assoziative Arrays genannt
 <li>Arrays
 <li>Zahlen (Number)
 <li>Zeichenketten (String)
+<li>Wahrheitswerte (Boolean)
+<li><code>null</code>
 </ul>
+
+
+
+<p>Folgende Objekte lassen sich <strong>nicht</strong> (ohne weiteres) mittels JSON speichern und übertragen:</p>
 
 <ul>
-<li>
-Funktionen
-JavaScript-Kern-Objekte (Object, Array, String, RegExp, Number, Math usw.)
-JavaScript-Host-Objekte (window, location, history, usw.)
-DOM-Knoten (document, Elementobjekte usw.)
+<li>Funktionen (Funktionsobjekte)
+<li>Date-Objekte
+<li>RegExp-Objekte
+<li>JavaScript-Kern-Objekte (die Konstruktoren Object, Array, String, RegExp, Number, Math usw.)
+<li>JavaScript-Host-Objekte (window, location, history, usw.)
+<li>DOM-Knoten (document, Elementobjekte usw.)
 </ul>
- 
-<p>Für die Serialisierung von Daten in einen String im JSON-Format und die Zurückwandlung dieses Strings in JavaScript-Daten existiert ein Helferscript, das die zwei JavaScript-Funktionen <code>JSON.stringify</code> und <code>JSON.parse</code> anbietet. Dieses Script von Douglas Crockford können Sie sich unter <a href="http://json.org/...">json.org</a> herunterladen.</p>
 
-<p>Der große Clou bei der Wahl von JSON als Übertragungsformat ist folgender: Neuere Browser haben die genannten Funktionen <code>JSON.stringify</code> und <code>JSON.parse</code> bereits eingebaut. Man muss in diesem Fall kein zusätzliches JavaScript laden, das die Funktionalität bereitstellt. Der Vorteil dieser sogenannten »nativen« Umsetzung ist vor allem Zuverlässigkeit und Geschwindigkeit. Auch an dieser Stelle machen wir von den neuen Möglichkeiten der Browser Gebrauch. Wenn diese noch nicht verfügbar sind, laden wir automatisch das benötigte Script nach.</p>
+<p>RegExp- und Date-Objekte sind nur dann übertragbar, wenn sie vorher manuell in einen String umgewandelt werden. Die Umwandlung von selbst definierten Funktionen in Strings unterstützen ebenfalls die meisten Browser. In diesen Fällen müssen Sie selbst Hand anlegen, indem Sie die <code>toString</code>-Methode aufrufen, um das Objekt zur Übertragung vorzubereiten:</p>
 
-<h2>Zusammenfassung und Überblick</h2>
+<pre>
+var funktion = function () { alert("Hallo Welt!") ; };
+// Umwandlung in einen String:
+var serialisierteFunktion = funktion.toString();
 
-<p>Ziel ist ein Script, das zukunftssicher und abwärtskompatibel ist. Zukunftstechniken sollen genutzt werden, sofern sie verfügbar sind. Andernfalls wird die fähigste Technik verwendet, die der Browser bereitstellt. Die Struktur des Scriptes soll Pate stehen für viele JavaScripte, die eine bestimmte Funktionalität browserübergreifend umsetzen müssen und dabei &raquo;unter der Haube&laquo; verschiedene Techniken nutzen, die automatisch nach Verfügbarkeit verwendet werden.</p>
+var regulärerAusdruck = /.+/gi;
+// Umwandlung in einen String:
+var serialisierterRegulärerAusdruck = regulärerAusdruck.toString();
+
+var datum = new Date;
+// Umwandlung in einen String:
+var serialisiertesDatum = datum.toString();
+</pre>
+
+<p>Die Rückverwandlung des serialisierten Strings in das Ausgangsobjekt kann bei Funktionen und regulären Ausdrücken mit <code>eval</code> erfolgen, bei dem Datumswert mit <code>new Date</code>.</p>
+
+<pre>
+var funktion = eval(serialisierteFunktion);
+var regulärerAusdruck = eval(serialisierterRegulärerAusdruck);
+var datum = new Date(serialisiertesDatum);
+</pre>
+
+<h2>Zusammenfassung der verwendeten Übertragungstechniken</h2>
 
 <table>
-<caption>Merkmale der verwendeten Übertragungstechniken</caption>
 <thead>
 <tr>
 <th>Methode</th>
@@ -256,10 +293,10 @@ DOM-Knoten (document, Elementobjekte usw.)
 <tbody>
 <tr>
 <th>HTML 5 DOM Storage (<code>window.sessionStorage</code>)</th>
-<td>keine notwendig</td>
+<td>(hier) JSON</td>
 <td>keine notwendig</td>
 <td>X KB netto</td>
-<td><p>Session</p><p class="note">(Beschränkung durch die Wahl von <code>sessionStorage</code> statt <code>localStorage</code>)</p></td>
+<td><p>Session</p><p class="note">(Beschränkung durch die Wahl von <code>sessionStorage</code>, Session-übergreifende Speicherung wäre mit <code>localStorage</code> möglich)</p></td>
 <td>Same-Origin-Policy</td>
 </tr>
 <tr>
@@ -280,7 +317,7 @@ DOM-Knoten (document, Elementobjekte usw.)
 </tr>
 <tr>
 <th>Fenstername (<code>window.name</code>)</th>
-<td>keine notwendig</td>
+<td>(hier) JSON</td>
 <td>keine notwendig</td>
 <td>bis zu mehreren Megabyte</td>
 <td>solange das Fenster bzw. der Tab geöffnet ist</td>
@@ -291,58 +328,77 @@ DOM-Knoten (document, Elementobjekte usw.)
 
 <h2>Ausblick auf verwandte Techniken</h2>
 
-<p>Es gibt noch weitere und weitaus komplexere Techniken, die sich zur Übertragung von JavaScript-Daten zwischen Dokumenten eignen. Hier wurde allerdings der Fokus auf den einfachen Datenaustausch während einer Browser-Session gelegt. Wenn der Anwender den Browser schließt, werden die gespeicherten Daten bestenfalls automatisch gelöscht.</p>
+<p>Es gibt noch weitere und weitaus komplexere Techniken, die sich zur Übertragung von JavaScript-Daten zwischen Dokumenten eignen. Hier wurde allerdings der Fokus auf den einfachen Datenaustausch während einer <strong>Browser-Session</strong> gelegt. Wenn der Anwender den Browser schließt, werden die gespeicherten Daten bestenfalls automatisch gelöscht.</p>
 
-<p>Andere Techniken widmen sich vornehmlich dem persistenten, d.h. dauerhaften und Session-übergreifenden Speichern von Daten auf dem Client. Das besagte <code>userData</code> des Internet Explorers ist im Grunde für die dauerhafte Speicherung angelegt. Man kann die Haltbarkeit bzw. Lebensdauer der clientseitig gespeicherten Daten jedoch auf die Session begrenzen &ndash; davon macht das hier vorgestellte Script Gebrauch.</p>
+<p>Andere Techniken widmen sich vornehmlich dem <strong>persistenten</strong>, d.h. dauerhaften und <strong>Session-übergreifenden</strong> Speichern von Daten auf dem Client. Das besagte <code>userData</code> des Internet Explorers ist im Grunde für die dauerhafte Speicherung angelegt. Man kann die Haltbarkeit bzw. Lebensdauer der clientseitig gespeicherten Daten jedoch auf die Session begrenzen &ndash; davon macht das hier vorgestellte Script Gebrauch.</p>
 
-<h3>globalStorage aus HTML 5</h3>
+<h3><code>localStorage</code> aus HTML 5</h3>
 
-TODO: Heißt es nicht localStorage?!
-
-<p>DOM Storage aus der HTML-5-Spezifikation umfasst neben dem bereits besprochenen Objekt <code>window.sessionStorage</code> ein Äquivalent zur persistenten Speicherung. Das entsprechende Objekt heißt <code>globalStorage</code> und ist auf ähnliche Weise nutzbar:</p>
+<p>DOM Storage aus der HTML-5-Spezifikation umfasst neben dem bereits besprochenen Objekt <code>sessionStorage</code> ein Äquivalent zur persistenten Speicherung. Das entsprechende Objekt heißt <code>localStorage</code> und ist auf ähnliche Weise nutzbar:</p>
 
 <pre>
-globalStorage["example.org"].nachricht = "Dieser Text wird vom Browser " +
-	"sessionübergreifend gespeichert. Die Website example.org kann ihn " +
-	"auch nach einem Browser-Neustart noch auslesen.";
+localStorage.nachricht = "Dieser Text wird vom Browser " +
+	"sessionübergreifend gespeichert. Die Website example.org sowie deren "+
+	"Unter-Domain können ihn auch nach einem Browser-Neustart noch auslesen.";
 </pre>
 
-<h3>openDatabase aus HTML 5</h3>
+<h3><code>openDatabase</code> aus HTML 5</h3>
 
-<p>HTML 5 definiert für die Speicherung zahlreicher gleichförmiger Datensätze eine JavaScript-Schnittstelle zu einer abgespeckten, im Browser integrierten SQL-Datenbank.
-
-Beschränkter Befehlssatz aus SQLite (?)
-
-Diese lässt sich prinzipiell so nutzen wie &raquo;große&laquo; SQL-Datenbanken, die im Webkontext verbreitet sind (z.B. MySQL oder PostgreSQL). Mit <code>CREATE TABLE</code> wird eine Tabelle in der Datenbank erzeugt und deren Einträge lassen sich mit den Befehlen <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code> und <code>DELETE</code> auslesen und manipulieren.</p>
+<p>HTML 5 definiert für die Speicherung zahlreicher gleichförmiger Datensätze eine JavaScript-Schnittstelle zu einer abgespeckten, im Browser integrierten SQL-Datenbank. Diese lässt sich ähnlich ansprechen wie &raquo;große&laquo; SQL-Datenbanken, die im Webkontext verbreitet sind (z.B. MySQL oder PostgreSQL): Mit <code>CREATE TABLE</code> wird eine Tabelle in der Datenbank erzeugt und deren Einträge lassen sich mit den Befehlen <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code> und <code>DELETE</code> auslesen und manipulieren. Dennoch ist der Befehlssatz im Vergleich zu richtigen relativen Datenbank-Managementsystemen sehr beschränkt und derzeit noch nicht fest spezifiziert.</p>
 
 <h3>SharedObjects aus Adobe Flash</h3>
 
-<p>Ab Flash 7 besteht die Möglichkeit, dass ein Flash-Film ActionScript-Daten dauerhaft als &raquo;Super-Cookie&laquo; auf dem Client speichern kann. Diese Technik nennt sich <code>SharedObject</code>. Um JavaScript-Daten mittels Flash als SharedObject zu speichern, muss ein kleiner Flash-Film eingebundenen werden, der ein entsprechendes Interface für JavaScript anbietet, mit dem sich via JavaScript ActionScript-Funktionen aufrufen lassen.</p>
+<p>Ab Flash 7 besteht die Möglichkeit, dass ein Flash-Film ActionScript-Daten dauerhaft als &raquo;Super-Cookie&laquo; auf dem Client speichern kann. Diese Technik nennt sich <code>SharedObject</code>. Um JavaScript-Daten mittels Flash als SharedObject zu speichern, muss ein kleiner Flash-Film eingebundenen werden, der eine entsprechende Schnittstelle für JavaScript anbietet, mit dem sich via JavaScript ActionScript-Funktionen aufrufen lassen.</p>
 
 <h3>Andere Fertigscripte</h3>
 
 <dl>
-<dt><a href="...">JSSS</a></dt>
-<dd>Wrapper zur Übergabe von JavaScript-Daten zwischen Dokumenten einer Session. Verwendet derzeit DOM Storage aus HTML 5, Microsofts userData, SharedObjects in Flash sowie openDatabase aus HTML 5.</dd>
-<dt><a href="...">PersistJS</a></dt>
+<dt><a href="http://code.google.com/p/javascript-session-jss/">JSS</a></dt>
+<dd>Wrapper zur Übergabe von JavaScript-Daten zwischen Dokumenten einer Session. Verwendet derzeit sessonStorage aus HTML 5, Microsofts userData, SharedObjects in Flash sowie openDatabase aus HTML 5.</dd>
+<dt><a href="http://pablotron.org/software/persist-js/">PersistJS</a></dt>
 <dd>Wrapper zur persistenten, Session-übergreifenden Speicherung von JavaScript-Daten auf dem Client-Rechner. Verwendet derzeit die SQL-Datenbank von Google Gears, localStorage und globalStorage aus HTML 5, SharedObjects in Flash, Microsofts userData sowie Cookies.</dd>
+<dt><a href="http://eric.garside.name/docs.html?p=jstore">jStore</a></dt>
+<dd>jQuery-Plugin zur persistenten Speicherung. Verwendet derzeit die SQL-Datenbank von Google Gears, localStorage und sessionStorage aus HTML 5, SharedObjects in Flash sowie Microsofts userData.</dl>
 </dl>
 
 <h2>Aufbau und Ablauf des Scriptes</h2>
 
 <h3>Grundgedanken</h3>
 
-<p>Das Script besteht intern aus einer Reihe verschiedener <strong>Umsetzungen</strong> (engl. <strong>Implementations</strong>). Diese nutzen jeweils eine der vorgestellten vier Techniken (DOM Storage, userData, window.name, Cookies). Je nachdem, welche Technik der Browser unterstützt, soll das Script automatisch die leistungsfähigste Umsetzung zur Datenübergabe verwenden. Nach außen hin soll das Script jedoch immer eine einheitliche Programmierschnittstelle (API) anbieten. Das Script dient somit als vereinheitlichende Abstraktion von den tatsächlichen unterschiedlichen Umsetzungen.</p>
+<p>Das Script besteht intern aus einer Reihe verschiedener <strong>Umsetzungen</strong> (engl. <strong>Implementations</strong>). Diese nutzen jeweils eine der vorgestellten vier Techniken. Das Script soll automatisch die leistungsfähigste Umsetzung zur Datenübergabe verwenden, die der verwendete Browser bereitstellt. Nach außen hin soll das Script eine einheitliche Programmierschnittstelle (API) anbieten. Das Script dient somit als vereinheitlichende Abstraktion von den tatsächlichen unterschiedlichen Umsetzungen.</p>
 
-<p>Jede der Umsetzung wird als Objekt notiert, das einen gleichen Satz an Methoden anbietet, die auf gleiche Weise mit Parametern angesteuert werden können. Das sind vor allem die Methoden <code>get</code>, <code>add</code> und <code>remove</code> zum Auslesen, Hinzufügen, Entfernen von gespeicherten Einträge und <code>clear</code> zum Löschen aller gespeicherten Einträge.</p>
+<p>Jede der Umsetzungen wird als Objekt notiert, das einen gleichen Satz an Methoden anbietet, die auf gleiche Weise mit Parametern angesteuert werden können. Das sind vor allem die Methoden <code>get</code>, <code>add</code> und <code>remove</code> zum Auslesen, Hinzufügen, Entfernen von gespeicherten Einträge und <code>clear</code> zum Löschen aller gespeicherten Einträge.</p>
 
-<p>Manche Umsetzungen ähneln einander und weichen nur im Detail voneinander ab: Die Alternativen zu DOM Storage bedürfen allesamt einer Serialisierung der Daten. Wir wollen diese Logik nicht bei jeder der Umsetzung wiederholen, sondern setzen stattdessen eine <strong>Vorlage</strong> für die Umsetzungen ein (engl. <strong>Implementation Template</strong> bzw. <strong>Mixin</strong>). Wenn eine Umsetzung mit Serialisierung arbeiten muss, erbt sie einfach die allgemeinen Methoden von der Vorlage. Die spezifischen Methoden können dann sehr knapp notiert werden.</p>
+<p>Die Umsetzungen ähneln einander und weichen nur im Detail voneinander ab. Beispielsweise bedürfen die vier Techniken einer Serialisierung der Daten. Diese Logik wird nicht bei jeder Umsetzung wiederholet, sondern stattdessen wird eine <strong>Vorlage</strong> für die Umsetzungen eingesetzt (engl. <strong>Implementation Template</strong> bzw. <strong>Mixin</strong>). Wenn eine Umsetzung mit Serialisierung arbeiten muss, »erbt« sie einfach die allgemeinen Methoden von der Vorlage. Die spezifischen Methoden können dann sehr knapp notiert werden.</p>
 
 <h3>Script- und Objektstruktur</h3>
 
-<p>Das gesamte Script ist in eine anonyme (namenlose) Funktion gekapselt. Auf diese Weise können wir lokale Variablen notieren, die zwar allen Funktionen innerhalb der Kapsel-Funktion zur Verfügung stehen, aber nicht globalen Gültigkeitsbereich (das <code>window</code>-Objekt) »verschmutzen«.</p>
+<p>Der grobe Aufbau des Scriptes sieht wie folgt aus:</p>
 
-<p>Ziel des Scriptes ist jedoch, ein global verfügbares Objekt zur Verfügung zu stellen, z.B. unter <code>window.storage</code>. Unter welchem globalen Namen das Objekt angelegt wird, ist durch eine Variable steuerbar. Ziel ist es, einen möglichst eindeutigen Bezeichner zu verwenden, der sich nicht mit JavaScript-Objekten überschneidet, die der Browser bereitstellt oder die von anderen Scripten angelegt werden.</p>
+<pre>
+(function () {
+	var publicInterfaceName = "ssw";
+	
+	var helper = { &hellip; };
+	var serializers = {
+		json : { &hellip; }
+	};
+	var implementation = { &hellip; };
+	var mixins = {
+		serialized: { &hellip; }
+	};
+	
+	implementation.add(mixins.serialized, { &hellip; });
+	&hellip;
+	
+	implementation.detect();
+	delete implementation;
+})();
+</pre>
+
+<p>Das gesamte Script ist in eine anonyme (namenlose) Funktion gekapselt. Diese wird sofort ausgeführt wird, nachdem sie notiert wurde. Auf diese Weise können wir lokale Variablen notieren, die zwar allen Funktionen innerhalb der Kapsel-Funktion zur Verfügung stehen, aber nicht globalen Gültigkeitsbereich (das <code>window</code>-Objekt) »verschmutzen«.</p>
+
+<p>Ziel des Scriptes ist es, ein global verfügbares Objekt zur Verfügung zu stellen, standardmäßig unter <code>window.ssw</code>. Unter welchem globalen Namen das Objekt angelegt wird, ist durch eine Variable steuerbar. Der Bezeichner sollte möglichst eindeutig sein, um sich nicht mit JavaScript-Objekten zu überschneiden, die der Browser bereitstellt oder die von anderen Scripten angelegt werden.</p>
 
 <p>Das Script definiert zuerst <strong>vier große Objekte</strong>, die weitere Objekte und Methoden gruppieren:</p>
 
@@ -351,37 +407,39 @@ Diese lässt sich prinzipiell so nutzen wie &raquo;große&laquo; SQL-Datenbanken
 <dt><code>helper</code></dt>
 <dd>Diverse Helferfunktionen z.B. zum Durchlaufen von Arrays und Objekten, zum Kopieren von Objekteigenschaften sowie zum Laden von externen Scripten</dd>
 
-<dt><code>serializers</code> (Unterobjekt: json)</dt>
-<dd>Liste aller Serializer (Techniken zur Serialisierung), derzeit nur JSON. Ein Serializer muss die Methoden <code>init</code>, <code>serialize</code> und <code>unserialize</code> anbieten.</dd>
+<dt><code>serializers</code> (Unterobjekt: <code>json</code>)</dt>
+<dd>Liste aller Methoden zur Serialisierung, enthält derzeit nur JSON. Ein Serializer-Objekt muss die Methoden <code>init</code>, <code>serialize</code> und <code>unserialize</code> anbieten.</dd>
 
 <dt><code>implementation</code></dt>
-<dd>Objekt mit Methoden zur Verwaltung, automatischen Auswahl und Initialisierung der verfügbaren Umsetzung (Implementations). Enthält die Liste aller Umsetzungen.</dd>
+<dd>Objekt mit Methoden zur Verwaltung, automatischen Auswahl und Initialisierung der verfügbaren Umsetzung (Implementations). Enthält die Liste aller unterstützten Umsetzungen.</dd>
 
-<dt><code>mixins</code> (Unterobjekt: serialized)</dt>
+<dt><code>mixins</code> (Unterobjekt: <code>serialized</code>)</dt>
 <dd>Vorlagen (Templates bzw. Mixins) für die Umsetzungen, derzeit nur für Serialisierung.</dd>
 
 </dl>
 
-<p>Nachdem dieses Grundgerüst notiert ist, wird die Liste mit den Umsetzungen (<code>implementation.list</code>) gefüllt. Für die vier Umsetzungen wird jeweils die Methode <code>implementation.add</code> aufgerufen. Als Parameter wird ein Objekt-Literal übergeben, welcher zumindest die Eigenschaft <code>name</code>, die Methoden <code>init</code> und <code>isAvailable</code> sowie <code>get</code>, <code>add</code>, <code>remove</code>, <code>clear</code> bereitstellt. Das <strong>Umsetzungs-Objekt</strong> sieht folgendermaßen aus:</p>
+<p>Nachdem dieses Grundgerüst errichtet ist, wird die Liste mit den Umsetzungen (<code>implementation.list</code>) gefüllt. Für die vier Umsetzungen wird jeweils die Methode <code>implementation.add</code> aufgerufen. Als Parameter wird ein Objekt-Literal übergeben, der zumindest die Eigenschaft <code>name</code>, die Methoden <code>init</code> und <code>isAvailable</code> sowie <code>get</code>, <code>add</code>, <code>remove</code>, <code>clear</code> bereitstellt.</p>
+
+<p>Ein solches <strong>Umsetzungs-Objekt</strong> sieht schematisch folgendermaßen aus:</p>
 
 <pre>
 implementation.add({
 	name: "Name",
 	
-	/* private members */
-	init: function () { &hellip; },
-	isAvailable: function () { &hellip; },
+	/* Private Methoden */
+	init : function () { &hellip; },
+	isAvailable : function () { &hellip; },
 	
-	/* public members */
-	get: function (name) { &hellip; },
-	add: function (name, value) { &hellip; },
-	remove: function (name) { &hellip; },
-	clear: function () { &hellip; }
+	/* Öffentliche Methoden */
+	get : function (name) { &hellip; },
+	add : function (name, value) { &hellip; },
+	remove : function (name) { &hellip; },
+	clear : function () { &hellip; }
 	
 });
 </pre>
 
-<p>Die privaten Methoden finden nur intern Verwendung, die öffentlichen Methoden werden schließlich für die Programmierschnittstelle verwendet.</p>
+<p>Die privaten Methoden finden nur intern Verwendung, die öffentlichen Methoden werden schließlich für die öffentliche Schnittstelle verwendet, sind also später unter <code>window.ssw</code> verfügbar.</p>
 
 <p>Bei der Verwendung einer Umsetzungsvorlage wird <code>implementation.add</code> mit zwei Parametern aufgerufen. Der erste Parameter ist das <strong>Vorlagen-Objekt</strong>, der zweite Parameter das Umsetzungs-Objekt:</p>
 
@@ -397,20 +455,19 @@ implementation.add(mixins.template, {
 });
 </pre>
 
-<p>Wie man sieht, muss das Umsetzungs-Objekt nur noch wenige spezifische Methoden anbieten, die restlichen werden vom Vorlagen-Objekt vererbt. Diese Vererbung ist im Grunde bloß ein Kopieren (per Referenzen) der Methoden vom Vorlagen-Objekt zum Umsetzungs-Objekt und wird auch als <strong>Mixin</strong> bezeichnet.
-
+<p>Das Umsetzungs-Objekt muss nur noch wenige spezifische Methoden anbieten, die restlichen werden vom Vorlagen-Objekt vererbt. Diese Vererbung ist in diesem Fall bloß ein Kopieren der Methoden (als Referenzen) vom Vorlagen-Objekt zum Umsetzungs-Objekt und wird auch <strong>Mixin</strong> bezeichnet.</p>
 
 <h2>Funktionsweise</h2>
 
-<p>Beim Einlesen des Scripts wird <code>implementation.detect</code> ausgeführt, welches die automatische Auswahl der verfügbaren Umsetzung sowie deren Initialisierung vornimmt.</p>
+<p>Beim Einlesen des Scripts wird <code>implementation.detect</code> ausgeführt, welches die automatische Auswahl der verfügbaren Umsetzung sowie deren Einrichtung vornimmt.</p>
 
-<p><code>implementation.detect</code> durchläuft die Liste mit den Umsetzungen und ruft jeweils deren Methode <code>isAvailable</code> auf. Diese Methoden prüfen, ob die benötigten Techniken zur Verfügung stehen, und geben <code>true</code> oder <code>false</code> zurück. Sobald eine unterstützte Umsetzung gefunden wird, bricht die Schleife ab und ruft <code>implementation.setup</code> auf. Wenn keine der Techniken unterstützt werden, bricht das Script einfach ab.</p>
+<p><code>implementation.detect</code> durchläuft die Liste mit den Umsetzungen und ruft jeweils deren Methode <code>isAvailable</code> auf. Diese Methoden prüfen, ob die benötigten Techniken zur Verfügung stehen, und geben <code>true</code> oder <code>false</code> zurück. Sobald eine unterstützte Umsetzung gefunden wird, bricht die Schleife ab und ruft <code>implementation.setup</code> auf und übergibt das gefundene Umsetzungs-Objekt als Parameter. Wenn keine der Techniken unterstützt werden, bricht das Script einfach ab.</p>
 
-<p>In <code>implementation.setup</code> wird das <strong>öffentliche Interface</strong> (engl. <strong>public interface</strong>) erzeugt, das die besagte gleichbleibende Programmierschnittstelle darstellt, unter der das Script erreichbar sein wird. An dieses Objekt werden die öffentlichen Methoden der gefundenen Umsetzung kopiert. Das entstehende Objekt wird schließlich als globale Variable unter <code>window</code> abgespeichert &ndash; der dabei verwendete Name kann wie gesagt eingestellt werden.</p>
+<p>In <code>implementation.setup</code> wird die gleich bleibende <strong>öffentliche Schnittstelle</strong> (engl. <strong>public interface</strong>) erzeugt, unter der das Script erreichbar sein wird. An dieses Objekt werden die öffentlichen Methoden (<code>get</code>, <code>add</code>, <code>remove</code>, <code>clear</code>) der gefundenen Umsetzung kopiert. Das entstehende Objekt wird schließlich als globale Variable unter <code>window</code> abgespeichert, standardmäßig unter <code>window.ssw</code> &ndash; der dabei verwendete Name kann wie gesagt eingestellt werden.</p>
 
 <h2>Erweiterbarkeit</h2>
 
-<p>Wie beschrieben ist das Script in Helferfunktionen (<code>helper</code>), die Verwaltung der Umsetzungen (<code>implementation</code>), die Vorlagen (<code>mixins</code>), die Serialisierung (<code>serializers</code>) und schließlich in die Umsetzungen geteilt. Der Sinn dieser Aufteilung ist die klare und geradlinige Programmierung, aber auch die Erweiterbarkeit und Modularisierbarkeit. Mit dieser Architektur sollen sowohl andere Umsetzungen, Vorlagen als auch Serialisierungstechniken möglich sein. Die zentralen Objekte <code>mixins</code> und <code>serializers</code> können um weitere Member erweitert werden. Neue Umsetzungen werden mittels Aufrufen von <code>implementation.add</code> hinzugefügt und können auf die definierten Vorlagen und Serializer zurückgreifen.</p>
+<p>Das Script ist in Helferfunktionen (<code>helper</code>), die Verwaltung der Umsetzungen (<code>implementation</code>), die Vorlagen (<code>mixins</code>), die Serialisierung (<code>serializers</code>) und schließlich in die Umsetzungen geteilt. Der Sinn dieser Aufteilung ist die klare und geradlinige Programmierung, aber auch die Erweiterbarkeit und Modularisierbarkeit. Mit dieser Architektur sollen sowohl andere Umsetzungen, Vorlagen als auch Serialisierungstechniken möglich sein, die wahlweise auf die bereits definierten zurückgreifen können. Die zentralen Objekte <code>mixins</code> und <code>serializers</code> können um weitere Member erweitert werden. Neue Umsetzungen werden mittels Aufrufen von <code>implementation.add</code> hinzugefügt.</p>
 
 <h2>Anwendung (Methodenreferenz)</h2>
 

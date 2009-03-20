@@ -204,12 +204,12 @@
 			
 			/* Set up the public interface object */
 			var publicInterface = {
-				/* Provide active (auto-detected) implementation */
+				/* Provide chosen implementation */
 				implementation : imp,
 				/* Provide method to force another implementation */
 				forceImplementation : helper.bind(this.force, this)
 			};
-
+			
 			/* Provide core methods from the implementation */
 			helper.forEach(["get", "add", "remove", "clear"], function (methodName) {
 				/* Copy the bound function to the public interface */
@@ -310,6 +310,7 @@
 					this.specificClear();
 				}
 			}
+			
 		}
 	};
 	
@@ -322,7 +323,7 @@
 	implementation.add(mixins.serialized, {
 		
 		name: "domstorage",
-
+		
 		/* Necessary methods */
 		
 		isAvailable : function () {
@@ -339,7 +340,7 @@
 		},
 		
 		/* Internal members */
-
+		
 		storeName : publicInterfaceName,
 		
 		specificInit : function () {
@@ -375,10 +376,11 @@
 		
 		/* Internal members */
 		
+		/* Fictional tag name of the element which gets the userData behavior */
 		storeName : publicInterfaceName,
 		
 		specificInit : function () {
-			/* Create a non-existing element and append it to the root element */
+			/* Create a non-existing element and append it to the root element (html) */
 			var el = document.createElement(this.storeName);
 			document.documentElement.appendChild(el);
 			/* Apply userData behavior */

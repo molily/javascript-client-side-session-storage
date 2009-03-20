@@ -362,8 +362,8 @@ YUI({
 			_should : {
 				fail : {
 					testTransferFunction : true,
-					testTransferRegExp : true,
-					testTransferDOMNode : true
+					testTransferRegExp : true
+					/* , testTransferDOMNode : true */
 				}
 			},
 			
@@ -387,8 +387,11 @@ YUI({
 					var savedValue = w.ssw.get(key);
 					A.areEqual(originalValue, savedValue, "transferring a regular expression failed");
 				});
-			},
+			}
 			
+			/* Fails in some browsers, but leads to an infinite recursion in other browsers */
+			/*
+			,
 			testTransferDOMNode : function () {
 				var	key = "node",
 					originalValue = w.document.documentElement;
@@ -401,6 +404,7 @@ YUI({
 					A.areEqual(originalValue, savedValue, "transferring a DOM Element failed");
 				});
 			}
+			*/
 			
 		}; /* end of transferTests */
 		
@@ -411,7 +415,6 @@ YUI({
 	
 	Y.sswTest.buildTestCases = function () {
 		var implementationNames = [null, "domstorage", "userdata",  "cookie", "windowname"];
-		var implementationNames = [null];
 		Y.Array.each(implementationNames, function (implementationName) {
 			Y.sswTest.buildImplementationTestCases(implementationName);
 		});
