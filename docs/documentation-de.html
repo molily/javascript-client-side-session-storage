@@ -188,7 +188,7 @@ Den Kanal können Sie sich als Nadelöhr vorstellen, durch das nur die Informati
 
 <p>Dieser <code>sessionStorage</code> hat dieselbe Haltbarkeit wie ein Session-Cookie und steht allen Dokumenten der Domain zur Verfügung. In einem Folgedokument können wir den gespeicherten Wert ganz auslesen, indem wir das zuvor angelegte Unterobjekt von <code>sessionStorage</code> ansprechen:</p>
 
-<pre>window.alert(window.sessionStorage.nachricht);</pre>
+<pre>window.alert(sessionStorage.nachricht);</pre>
 
 <p>Auch im <strong>sessionStorage</strong> können letztlich nur Strings gespeichert und ausgelesen werden. Komplexe Datenstrukturen bedürfen wie auch bei den bereits diskutierten Techniken einer <em>Serialisierung</em> und schließlich seitens des empfangenden Dokuments einer Dekodierung.</p>
 
@@ -487,8 +487,8 @@ implementation.add(mixins.template, {
 <h5>Beispiel:</h5>
 
 <pre>
-storage.add("name", "wert")
-storage.add("meinArray", [1, 2, 3, "Hallo"]);
+ssw.add("name", "wert")
+ssw.add("meinArray", [1, 2, 3, "Hallo"]);
 </pre>
 
 <h4>Ein Parameter: Objekt</h4>
@@ -500,8 +500,8 @@ storage.add("meinArray", [1, 2, 3, "Hallo"]);
 <h5>Beispiel:</h5>
 
 <pre>
-storage.add( { bla : "blub" } )
-storage.add( { meinArray : [1, 2, 3, "Hallo", { objekt : "mitString" }] } )
+ssw.add( { bla : "blub" } )
+ssw.add( { meinArray : [1, 2, 3, "Hallo", { objekt : "mitString" }] } )
 </pre>
 
 <h3>Auslesen von Werten mit <code>get</code></h3>
@@ -513,7 +513,7 @@ storage.add( { meinArray : [1, 2, 3, "Hallo", { objekt : "mitString" }] } )
 <h5>Beispiel:</h5>
 
 <pre>
-var speicherObj = storage.get();
+var speicherObj = ssw.get();
 alert(speicherObj.name1 + " " + speicherObj.name2 + " " + speicherObj.name3);
 </pre>
 
@@ -526,7 +526,7 @@ alert(speicherObj.name1 + " " + speicherObj.name2 + " " + speicherObj.name3);
 <h5>Beispiel:</h5>
 
 <pre>
-var wert = storage.get("name");
+var wert = ssw.get("name");
 alert(wert);
 </pre>
 
@@ -537,7 +537,7 @@ alert(wert);
 <h5>Beispiel:</h5>
 
 <pre>
-storage.remove("name");
+ssw.remove("name");
 </pre>
 
 <h3>Alle gespeicherten Werte löschen mit <code>clear</code></h3>
@@ -547,7 +547,7 @@ storage.remove("name");
 <h5>Beispiel:</h5>
 
 <pre>
-storage.clear();
+ssw.clear();
 </pre>
 
 <h3>Umsetzung erzwingen mit <code>forceImplementation</code></h3>
@@ -566,18 +566,19 @@ storage.clear();
 <h5>Beispiel:</h5>
 
 <pre>
-storage.forceImplementation("cookie")
+ssw.forceImplementation("cookie")
 </pre>
 
 </div>
 
 <h2>Download</h2>
 
-Als JS
-Als ZIP mit json2.js, HTML-Dokumentation und Beispielen
+<ul>
+<li>Als JS</li>
+<li>Als ZIP mit json2.js, HTML-Dokumentation und Beispielen</li>
+</ul>
 
 <h2>Urheberangabe und Lizenz</h2>
 
-Mathias Schäfer <molily@selfhtml.org>
-Public Domain (gemeinfrei)
-uneingeschränkte Nutzungsrecht an jeden
+<p>Autor: Mathias Schäfer, <a href="mailto:zapperlott@gmail.com">zapperlott@gmail.com</a></p>
+<p>Lizenz: Public Domain (gemeinfrei)</p>
