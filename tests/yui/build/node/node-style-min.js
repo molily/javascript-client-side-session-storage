@@ -1,7 +1,8 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
-YUI.add("node-style",function(A){A.Node.addDOMMethods(["getStyle","getComputedStyle","setStyle","setStyles"]);},"3.0.0pr2",{requires:["dom-style","node-base"]});
+YUI.add("node-style",function(A){(function(C){var B=["getStyle","getComputedStyle","setStyle","setStyles"];C.Node.importMethod(C.DOM,B);C.NodeList.importMethod(C.Node.prototype,B);})(A);A.mix(A.Node.ATTRS,{offsetHeight:{setter:function(B){A.DOM.setHeight(this._node,B);return B;},getter:function(){return this._node.offsetHeight;}},offsetWidth:{setter:function(B){A.DOM.setWidth(this._node,B);return B;},getter:function(){return this._node.offsetWidth;}}});A.mix(A.Node.prototype,{sizeTo:function(B,C){var D;if(arguments.length<2){D=A.one(B);B=D.get("offsetWidth");C=D.get("offsetHeight");}this.setAttrs({offsetWidth:B,offsetHeight:C});}});},"3.1.0",{requires:["dom-style","node-base"]});

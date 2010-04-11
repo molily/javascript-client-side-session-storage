@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('widget-stack', function(Y) {
 
@@ -30,6 +31,7 @@ YUI.add('widget-stack', function(Y) {
         OFFSET_HEIGHT = "offsetHeight",
         PARENT_NODE = "parentNode",
         FIRST_CHILD = "firstChild",
+        OWNER_DOCUMENT = "ownerDocument",
 
         WIDTH = "width",
         HEIGHT = "height",
@@ -48,9 +50,7 @@ YUI.add('widget-stack', function(Y) {
         ContentUpdate = "contentUpdate",
 
         // CSS
-        STACKED = "stacked",
-        SHOW_SCROLLBARS = "show-scrollbars",
-        HIDE_SCROLLBARS = "hide-scrollbars";
+        STACKED = "stacked";
 
     /**
      * Widget extension, which can be used to add stackable (z-index) support to the 
@@ -101,7 +101,7 @@ YUI.add('widget-stack', function(Y) {
          */
         zIndex: {
             value:0,
-            set: function(val) {
+            setter: function(val) {
                 return this._setZIndex(val);
             }
         }
@@ -189,12 +189,6 @@ YUI.add('widget-stack', function(Y) {
          */
         _renderUIStack: function() {
             this._stackNode.addClass(Stack.STACKED_CLASS_NAME);
-
-            // TODO:DEPENDENCY Env.os
-            var isMac = navigator.userAgent.toLowerCase().indexOf("macintosh") != -1;
-            if (isMac && UA.gecko && UA.gecko <= 1.9) {
-                this._fixMacGeckoScrollbars();
-            }
         },
 
         /**
@@ -222,7 +216,7 @@ YUI.add('widget-stack', function(Y) {
          *
          * @method _afterShimChange
          * @protected
-         * @param {Event.Facade} e The event facade for the attribute change
+         * @param {EventFacade} e The event facade for the attribute change
          */
         _afterShimChange : function(e) {
             this._uiSetShim(e.newVal);
@@ -234,7 +228,7 @@ YUI.add('widget-stack', function(Y) {
          * 
          * @method _afterZIndexChange
          * @protected
-         * @param {Event.Facade} e The event facade for the attribute change
+         * @param {EventFacade} e The event facade for the attribute change
          */
         _afterZIndexChange : function(e) {
             this._uiSetZIndex(e.newVal);
@@ -375,52 +369,6 @@ YUI.add('widget-stack', function(Y) {
         },
 
         /**
-         * Applies the CSS classes required to fix scrollbar bleedthrough, for FF2/Mac
-         * 
-         * @method _fixMacGeckoScrollbars
-         * @private
-         */
-        _fixMacGeckoScrollbars: function() {
-            this._toggleMacGeckoScrollbars();
-            this.after(VisibleChange, this._toggleMacGeckoScrollbars);
-        },
-
-        /**
-         * Flip the hide/show scrollbar classes applied to the Widget based on visibility, 
-         * to prevent scrollbar bleedthrough on FF2/Mac,
-         *
-         * @method _toggleMacGeckoScrollbars
-         * @private
-         */
-        _toggleMacGeckoScrollbars : function() {
-            if (this.get(VISIBLE)) {
-                this._showMacGeckoScrollbars();
-            } else {
-                this._hideMacGeckoScrollbars();
-            }
-        },
-
-        /**
-         * Set CSS classes on the Widgets boundingBox, to prevent scrollbar bleedthrough on FF2/Mac, when the Widget is hidden.
-         *
-         * @method _hideMacGeckoScrollbars
-         * @private
-         */
-        _hideMacGeckoScrollbars: function () {
-            this._stackNode.replaceClass(Widget.getClassName(SHOW_SCROLLBARS), Widget.getClassName(HIDE_SCROLLBARS));
-        },
-
-        /**
-         * Set CSS classes on the Widgets boundingBox, to prevent scrollbar bleedthrough on FF2/Mac, when the Widget is visible.
-         *
-         * @method _hideMacGeckoScrollbars
-         * @private
-         */
-        _showMacGeckoScrollbars: function () {
-            this._stackNode.replaceClass(Widget.getClassName(HIDE_SCROLLBARS), Widget.getClassName(SHOW_SCROLLBARS));
-        },
-
-        /**
          * For IE6, synchronizes the size and position of iframe shim to that of 
          * Widget bounding box which it is protecting. For all other browsers,
          * this method does not do anything.
@@ -445,15 +393,11 @@ YUI.add('widget-stack', function(Y) {
          * @return {Node} node A new shim Node instance.
          */
         _getShimTemplate : function() {
-            if (!Stack._SHIM_TEMPLATE) {
-                Stack._SHIM_TEMPLATE = Node.create(Stack.SHIM_TEMPLATE);
-            }
-            return Stack._SHIM_TEMPLATE.cloneNode(true);
+            return Node.create(Stack.SHIM_TEMPLATE, this._stackNode.get(OWNER_DOCUMENT));
         }
     };
 
     Y.WidgetStack = Stack;
 
 
-
-}, '3.0.0pr2' ,{requires:['widget']});
+}, '3.1.0' ,{requires:['widget']});

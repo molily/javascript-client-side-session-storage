@@ -1,7 +1,8 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
-YUI.add("io-form",function(A){A.mix(A.io,{_serialize:function(C){var I=(typeof C.id==="object")?C.id:A.config.doc.getElementById(C.id),H=encodeURIComponent,G=[],L=C.useDisabled||false,O=0,J,D,M,K,F,B,E,N,C;for(F=0,B=I.elements.length;F<B;++F){J=I.elements[F];K=J.disabled;D=J.name;if((L)?D:(D&&!K)){D=encodeURIComponent(D)+"=";M=encodeURIComponent(J.value);switch(J.type){case"select-one":if(J.selectedIndex>-1){C=J.options[J.selectedIndex];G[O++]=D+H((C.attributes.value&&C.attributes.value.specified)?C.value:C.text);}break;case"select-multiple":if(J.selectedIndex>-1){for(E=J.selectedIndex,N=J.options.length;E<N;++E){C=J.options[E];if(C.selected){G[O++]=D+H((C.attributes.value&&opt.attributes.value.specified)?C.value:C.text);}}}break;case"radio":case"checkbox":if(J.checked){G[O++]=D+M;}break;case"file":case undefined:case"reset":case"button":break;case"submit":break;default:G[O++]=D+M;}}}return G.join("&");}},true);},"3.0.0pr2",{requires:["io-base"]});
+YUI.add("io-form",function(A){A.mix(A.io,{_serialize:function(M,R){var I=encodeURIComponent,H=[],N=M.useDisabled||false,Q=0,B=(typeof M.id==="string")?M.id:M.id.getAttribute("id"),K,J,D,P,L,G,O,E,F,C;if(!B){B=A.guid("io:");M.id.setAttribute("id",B);}J=A.config.doc.getElementById(B);for(G=0,O=J.elements.length;G<O;++G){K=J.elements[G];L=K.disabled;D=K.name;if((N)?D:(D&&!L)){D=encodeURIComponent(D)+"=";P=encodeURIComponent(K.value);switch(K.type){case"select-one":if(K.selectedIndex>-1){C=K.options[K.selectedIndex];H[Q++]=D+I((C.attributes.value&&C.attributes.value.specified)?C.value:C.text);}break;case"select-multiple":if(K.selectedIndex>-1){for(E=K.selectedIndex,F=K.options.length;E<F;++E){C=K.options[E];if(C.selected){H[Q++]=D+I((C.attributes.value&&C.attributes.value.specified)?C.value:C.text);}}}break;case"radio":case"checkbox":if(K.checked){H[Q++]=D+P;}break;case"file":case undefined:case"reset":case"button":break;case"submit":default:H[Q++]=D+P;}}}return R?H.join("&")+"&"+R:H.join("&");}},true);},"3.1.0",{requires:["io-base","node-base"]});

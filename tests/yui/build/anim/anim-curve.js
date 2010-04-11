@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('anim-curve', function(Y) {
 
@@ -11,7 +12,6 @@ YUI.add('anim-curve', function(Y) {
  * attribute.  A curve is zero or more control points and an end point.
  * @module anim
  * @submodule anim-curve
- * @for Anim
  */
 
 Y.Anim.behaviors.curve = {
@@ -34,6 +34,7 @@ Y.Anim.behaviors.curve = {
  * At least 2 points are required (start and end).
  * First point is start. Last point is end.
  * Additional control points are optional.     
+ * @for Anim
  * @method getBezier
  * @static
  * @param {Array} points An array containing Bezier points
@@ -60,4 +61,4 @@ Y.Anim.getBezier = function(points, t) {
 };
 
 
-}, '3.0.0pr2' ,{requires:['anim-base', 'node-screen']});
+}, '3.1.0' ,{requires:['anim-xy']});

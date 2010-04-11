@@ -1,10 +1,12 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('dd-ddm', function(Y) {
+
 
     /**
      * Extends the dd-ddm-base Class to add support for the viewport shim to allow a draggable node to drag to be dragged over an iframe or any other node that traps mousemove events.
@@ -12,6 +14,7 @@ YUI.add('dd-ddm', function(Y) {
      * @module dd
      * @submodule dd-ddm
      * @for DDM
+     * @namespace DD
      */
     Y.mix(Y.DD.DDM, {
         /**
@@ -28,7 +31,7 @@ YUI.add('dd-ddm', function(Y) {
         * @type {Boolean}
         */
         _debugShim: false,
-        _activateTargets: function() {},
+        _activateTargets: function() { },
         _deactivateTargets: function() {},
         _startDrag: function() {
             if (this.activeDrag.get('useShim')) {
@@ -54,12 +57,21 @@ YUI.add('dd-ddm', function(Y) {
         * @description Activates the shim
         */
         _pg_activate: function() {
+            var ah = this.activeDrag.get('activeHandle'), cur = 'auto';
+            if (ah) {
+                cur = ah.getStyle('cursor');
+            }
+            if (cur == 'auto') {
+                cur = this.get('dragCursor');
+            }
+            
             this._pg_size();
             this._pg.setStyles({
                 top: 0,
                 left: 0,
                 display: 'block',
-                opacity: ((this._debugShim) ? '.5' : '0')
+                opacity: ((this._debugShim) ? '.5' : '0'),
+                cursor: cur
             });
         },
         /**
@@ -69,7 +81,7 @@ YUI.add('dd-ddm', function(Y) {
         */
         _pg_size: function() {
             if (this.activeDrag) {
-                var b = Y.Node.get('body'),
+                var b = Y.one('body'),
                 h = b.get('docHeight'),
                 w = b.get('docWidth');
                 this._pg.setStyles({
@@ -84,38 +96,37 @@ YUI.add('dd-ddm', function(Y) {
         * @description Creates the shim and adds it's listeners to it.
         */
         _createPG: function() {
-            //var pg = Y.Node.create(['div']),
             var pg = Y.Node.create('<div></div>'),
-            bd = Y.Node.get('body');
+            bd = Y.one('body'), win;
             pg.setStyles({
                 top: '0',
                 left: '0',
                 position: 'absolute',
                 zIndex: '9999',
                 overflow: 'hidden',
-                //opacity: '0',
                 backgroundColor: 'red',
                 display: 'none',
                 height: '5px',
                 width: '5px'
             });
+            pg.set('id', Y.stamp(pg));
+            pg.addClass('yui3-dd-shim');
             if (bd.get('firstChild')) {
                 bd.insertBefore(pg, bd.get('firstChild'));
             } else {
                 bd.appendChild(pg);
             }
             this._pg = pg;
-            this._pg.on('mouseup', this._end, this, true);
-            this._pg.on('mousemove', this._move, this, true);
+            this._pg.on('mouseup', Y.bind(this._end, this));
+            this._pg.on('mousemove', Y.throttle(Y.bind(this._move, this), this.get('throttleTime')));
             
-            
-            Y.on('resize', this._pg_size, window, this, true);
-            Y.on('scroll', this._pg_size, window, this, true);
+            win = Y.one(window);
+            Y.on('window:resize', Y.bind(this._pg_size, this));
+            win.on('scroll', Y.bind(this._pg_size, this));
         }   
     }, true);
 
-    Y.DD.DDM._createPG();    
 
 
 
-}, '3.0.0pr2' ,{requires:['dd-ddm-base'], skinnable:false});
+}, '3.1.0' ,{requires:['dd-ddm-base', 'event-resize'], skinnable:false});

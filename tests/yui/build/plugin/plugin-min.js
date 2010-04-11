@@ -1,7 +1,8 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
-YUI.add("plugin",function(C){function A(D){A.superclass.constructor.apply(this,arguments);}A.NAME="plugin";A.NS="plugin";var B={_handles:null,initializer:function(D){if(D.owner){this._owner=D.owner;}else{}this._handles=[];},destructor:function(){if(this._handles){for(var E=0,D=this._handles.length;E<D;E++){this._handles[E].detach();}}},doBefore:function(H,F,E){var D=this._owner,G;E=E||this;if(H in D){G=C.Do.before(F,this._owner,H,E);}else{if(D.on){G=D.on(H,F,E);}}this._handles.push(G);return G;},doAfter:function(H,F,E){var D=this._owner,G;E=E||this;if(H in D){G=C.Do.after(F,this._owner,H,E);}else{if(D.after){G=D.after(H,F,E);}}this._handles.push(G);return G;},toString:function(){return this.constructor.NAME+"["+this.constructor.NS+"]";}};C.extend(A,C.Base,B);C.Plugin=A;},"3.0.0pr2",{requires:["base"]});
+YUI.add("plugin",function(B){function A(C){A.superclass.constructor.apply(this,arguments);}A.ATTRS={host:{writeOnce:true}};A.NAME="plugin";A.NS="plugin";B.extend(A,B.Base,{_handles:null,initializer:function(C){this._handles=[];},destructor:function(){if(this._handles){for(var D=0,C=this._handles.length;D<C;D++){this._handles[D].detach();}}},doBefore:function(G,D,C){var E=this.get("host"),F;if(G in E){F=this.beforeHostMethod(G,D,C);}else{if(E.on){F=this.onHostEvent(G,D,C);}}return F;},doAfter:function(G,D,C){var E=this.get("host"),F;if(G in E){F=this.afterHostMethod(G,D,C);}else{if(E.after){F=this.afterHostEvent(G,D,C);}}return F;},onHostEvent:function(E,D,C){var F=this.get("host").after(E,D,C||this);this._handles.push(F);return F;},afterHostEvent:function(E,D,C){var F=this.get("host").after(E,D,C||this);this._handles.push(F);return F;},beforeHostMethod:function(F,D,C){var E=B.Do.before(D,this.get("host"),F,C||this);this._handles.push(E);return E;},afterHostMethod:function(F,D,C){var E=B.Do.after(D,this.get("host"),F,C||this);this._handles.push(E);return E;},toString:function(){return this.constructor.NAME+"["+this.constructor.NS+"]";}});B.namespace("Plugin").Base=A;},"3.1.0",{requires:["base-base"]});

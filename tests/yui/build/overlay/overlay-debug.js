@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('overlay', function(Y) {
 
@@ -18,19 +19,18 @@ YUI.add('overlay', function(Y) {
  * A basic Overlay Widget, which can be positioned based on Page XY co-ordinates and is stackable (z-index support).
  * It also provides alignment and centering support and uses a standard module format for it's content, with header,
  * body and footer section support.
- * 
+ *
  * @class Overlay
  * @constructor
  * @extends Widget
+ * @uses WidgetStdMod
  * @uses WidgetPosition
  * @uses WidgetStack
- * @uses WidgetPositionExt
- * @uses WidgetStdMod
+ * @uses WidgetPositionAlign
+ * @uses WidgetPositionConstrain
  * @param {Object} object The user configuration for the instance.
  */
-Y.Overlay = Y.Base.build(Y.Widget, [Y.WidgetPosition, Y.WidgetStack, Y.WidgetPositionExt, Y.WidgetStdMod]);
-Y.Overlay.NAME = "overlay";
+Y.Overlay = Y.Base.create("overlay", Y.Widget, [Y.WidgetStdMod, Y.WidgetPosition, Y.WidgetStack, Y.WidgetPositionAlign, Y.WidgetPositionConstrain]);
 
 
-
-}, '3.0.0pr2' ,{requires:['widget', 'widget-position', 'widget-stack', 'widget-position-ext', 'widget-stdmod']});
+}, '3.1.0' ,{requires:['widget', 'widget-stdmod', 'widget-position', 'widget-stack', 'widget-position-align', 'widget-position-constrain']});

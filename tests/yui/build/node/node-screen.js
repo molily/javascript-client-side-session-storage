@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('node-screen', function(Y) {
 
@@ -11,181 +12,229 @@ YUI.add('node-screen', function(Y) {
  * Adds support for positioning elements and normalizes window size and scroll detection. 
  * @module node
  * @submodule node-screen
- * @for Node
  */
 
-    Y.each([
-        /**
-         * Returns the inner width of the viewport (exludes scrollbar). 
-         * @property winWidth
-         * @type {Int}
-         */
-        'winWidth',
-
-        /**
-         * Returns the inner height of the viewport (exludes scrollbar). 
-         * @property winHeight
-         * @type {Int}
-         */
-        'winHeight',
-
-        /**
-         * Document width 
-         * @property winHeight
-         * @type {Int}
-         */
-        'docWidth',
-
-        /**
-         * Document height 
-         * @property docHeight
-         * @type {Int}
-         */
-        'docHeight',
-
-        /**
-         * Amount page has been scroll vertically 
-         * @property docScrollX
-         * @type {Int}
-         */
-        'docScrollX',
-
-        /**
-         * Amount page has been scroll horizontally 
-         * @property docScrollY
-         * @type {Int}
-         */
-        'docScrollY'
-        ],
-        function(v, n) {
-            Y.Node.getters[v] = Y.Node.wrapDOMMethod(v);
-        }
-    );
-
-    Y.Node.addDOMMethods([
-    /**
-     * Gets the current position of the node in page coordinates. 
-     * Nodes must be part of the DOM tree to have page coordinates
-     * (display:none or nodes not appended return false).
-     * @method getXY
-     * @return {Array} The XY position of the node
-    */
-        'getXY',
-
-    /**
-     * Set the position of the node in page coordinates, regardless of how the node is positioned.
-     * The node must be part of the DOM tree to have page coordinates (display:none or elements not appended return false).
-     * @method setXY
-     * @param {Array} xy Contains X & Y values for new position (coordinates are page-based)
-     * @chainable
-     */
-        'setXY',
-
-    /**
-     * Gets the current position of the node in page coordinates. 
-     * Nodes must be part of the DOM tree to have page coordinates
-     * (display:none or nodes not appended return false).
-     * @method getX
-     * @return {Int} The X position of the node
-    */
-        'getX',
-
-    /**
-     * Set the position of the node in page coordinates, regardless of how the node is positioned.
-     * The node must be part of the DOM tree to have page coordinates (display:none or elements not appended return false).
-     * @method setX
-     * @param {Int} x X value for new position (coordinates are page-based)
-     * @chainable
-     */
-        'setX',
-
-    /**
-     * Gets the current position of the node in page coordinates. 
-     * Nodes must be part of the DOM tree to have page coordinates
-     * (display:none or nodes not appended return false).
-     * @method getY
-     * @return {Int} The Y position of the node
-    */
-        'getY',
-
-    /**
-     * Set the position of the node in page coordinates, regardless of how the node is positioned.
-     * The node must be part of the DOM tree to have page coordinates (display:none or elements not appended return false).
-     * @method setY
-     * @param {Int} y Y value for new position (coordinates are page-based)
-     * @chainable
-     */
-        'setY'
-    ]);
-/**
- * Extended Node interface for managing regions and screen positioning.
- * Adds support for positioning elements and normalizes window size and scroll detection. 
- * @module node
- * @submodule node-screen
- * @for Node
- */
+// these are all "safe" returns, no wrapping required
 Y.each([
-        /**
-         * Returns a region object for the node 
-         * @property region
-         * @type Node
-         */
-        'region',
-        /**
-         * Returns a region object for the node's viewport 
-         * @property viewportRegion
-         * @type Node
-         */
-        'viewportRegion'
-    ],
+    /**
+     * Returns the inner width of the viewport (exludes scrollbar). 
+     * @config winWidth
+     * @for Node
+     * @type {Int}
+     */
+    'winWidth',
 
-    function(v, n) {
-        Y.Node.getters[v] = Y.Node.wrapDOMMethod(v);
+    /**
+     * Returns the inner height of the viewport (exludes scrollbar). 
+     * @config winHeight
+     * @type {Int}
+     */
+    'winHeight',
+
+    /**
+     * Document width 
+     * @config winHeight
+     * @type {Int}
+     */
+    'docWidth',
+
+    /**
+     * Document height 
+     * @config docHeight
+     * @type {Int}
+     */
+    'docHeight',
+
+    /**
+     * Amount page has been scroll vertically 
+     * @config docScrollX
+     * @type {Int}
+     */
+    'docScrollX',
+
+    /**
+     * Amount page has been scroll horizontally 
+     * @config docScrollY
+     * @type {Int}
+     */
+    'docScrollY'
+    ],
+    function(name) {
+        Y.Node.ATTRS[name] = {
+            getter: function() {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(Y.Node.getDOMNode(this));
+
+                return Y.DOM[name].apply(this, args);
+            }
+        };
     }
 );
 
-Y.Node.addDOMMethods([
-    /**
-     * Determines whether or not the node is currently visible in the viewport. 
-     * @method inViewportRegion         
-     * @return {Boolean} Whether or not the node is currently positioned
-     * within the viewport's region
-     */
-    'inViewportRegion'
-]);
-
-// these need special treatment to extract 2nd node arg
-Y.Node.methods({
-    /**
-     * Compares the intersection of the node with another node or region 
-     * @method intersect         
-     * @param {Node|Object} node2 The node or region to compare with.
-     * @param {Object} altRegion An alternate region to use (rather than this node's). 
-     * @return {Object} An object representing the intersection of the regions. 
-     */
-    intersect: function(node1, node2, altRegion) {
-        if (node2 instanceof Y.Node) { // might be a region object
-            node2 = Y.Node.getDOMNode(node2);
-        }
-        return Y.DOM.intersect(node1, node2, altRegion); 
+Y.Node.ATTRS.scrollLeft = {
+    getter: function() {
+        var node = Y.Node.getDOMNode(this);
+        return ('scrollLeft' in node) ? node.scrollLeft : Y.DOM.docScrollX(node);
     },
 
-    /**
-     * Determines whether or not the node is within the giving region.
-     * @method inRegion         
-     * @param {Node|Object} node2 The node or region to compare with.
-     * @param {Boolean} all Whether or not all of the node must be in the region. 
-     * @param {Object} altRegion An alternate region to use (rather than this node's). 
-     * @return {Object} An object representing the intersection of the regions. 
-     */
-    inRegion: function(node1, node2, all, altRegion) {
-        if (node2 instanceof Y.Node) { // might be a region object
-            node2 = Y.Node.getDOMNode(node2);
+    setter: function(val) {
+        var node = Y.Node.getDOMNode(this);
+        if (node) {
+            if ('scrollLeft' in node) {
+                node.scrollLeft = val;
+            } else if (node.document || node.nodeType === 9) {
+                Y.DOM._getWin(node).scrollTo(val, Y.DOM.docScrollY(node)); // scroll window if win or doc
+            }
+        } else {
         }
-        return Y.DOM.inRegion(node1, node2, all, altRegion); 
     }
-});
+};
+
+Y.Node.ATTRS.scrollTop = {
+    getter: function() {
+        var node = Y.Node.getDOMNode(this);
+        return ('scrollTop' in node) ? node.scrollTop : Y.DOM.docScrollY(node);
+    },
+
+    setter: function(val) {
+        var node = Y.Node.getDOMNode(this);
+        if (node) {
+            if ('scrollTop' in node) {
+                node.scrollTop = val;
+            } else if (node.document || node.nodeType === 9) {
+                Y.DOM._getWin(node).scrollTo(Y.DOM.docScrollX(node), val); // scroll window if win or doc
+            }
+        } else {
+        }
+    }
+};
+
+Y.Node.importMethod(Y.DOM, [
+/**
+ * Gets the current position of the node in page coordinates. 
+ * @method getXY
+ * @for Node
+ * @return {Array} The XY position of the node
+*/
+    'getXY',
+
+/**
+ * Set the position of the node in page coordinates, regardless of how the node is positioned.
+ * @method setXY
+ * @param {Array} xy Contains X & Y values for new position (coordinates are page-based)
+ * @chainable
+ */
+    'setXY',
+
+/**
+ * Gets the current position of the node in page coordinates. 
+ * @method getX
+ * @return {Int} The X position of the node
+*/
+    'getX',
+
+/**
+ * Set the position of the node in page coordinates, regardless of how the node is positioned.
+ * @method setX
+ * @param {Int} x X value for new position (coordinates are page-based)
+ * @chainable
+ */
+    'setX',
+
+/**
+ * Gets the current position of the node in page coordinates. 
+ * @method getY
+ * @return {Int} The Y position of the node
+*/
+    'getY',
+
+/**
+ * Set the position of the node in page coordinates, regardless of how the node is positioned.
+ * @method setY
+ * @param {Int} y Y value for new position (coordinates are page-based)
+ * @chainable
+ */
+    'setY',
+
+/**
+ * Swaps the XY position of this node with another node. 
+ * @method swapXY
+ * @param {Y.Node || HTMLElement} otherNode The node to swap with.
+ * @chainable
+ */
+    'swapXY'
+]);
+
+/**
+ * Returns a region object for the node 
+ * @config region
+ * @for Node
+ * @type Node
+ */
+Y.Node.ATTRS.region = {
+    getter: function() {
+        var node = Y.Node.getDOMNode(this),
+            region;
+
+        if (node && !node.tagName) {
+            if (node.nodeType === 9) { // document
+                node = node.documentElement;
+            }
+        }
+        if (node.alert) {
+            region = Y.DOM.viewportRegion(node);
+        } else {
+            region = Y.DOM.region(node);
+        }
+        return region; 
+    }
+};
+    
+/**
+ * Returns a region object for the node's viewport 
+ * @config viewportRegion
+ * @type Node
+ */
+Y.Node.ATTRS.viewportRegion = {
+    getter: function() {
+        return Y.DOM.viewportRegion(Y.Node.getDOMNode(this));
+    }
+};
+
+Y.Node.importMethod(Y.DOM, 'inViewportRegion');
+
+// these need special treatment to extract 2nd node arg
+/**
+ * Compares the intersection of the node with another node or region 
+ * @method intersect         
+ * @for Node
+ * @param {Node|Object} node2 The node or region to compare with.
+ * @param {Object} altRegion An alternate region to use (rather than this node's). 
+ * @return {Object} An object representing the intersection of the regions. 
+ */
+Y.Node.prototype.intersect = function(node2, altRegion) {
+    var node1 = Y.Node.getDOMNode(this);
+    if (node2 instanceof Y.Node) { // might be a region object
+        node2 = Y.Node.getDOMNode(node2);
+    }
+    return Y.DOM.intersect(node1, node2, altRegion); 
+};
+
+/**
+ * Determines whether or not the node is within the giving region.
+ * @method inRegion         
+ * @param {Node|Object} node2 The node or region to compare with.
+ * @param {Boolean} all Whether or not all of the node must be in the region. 
+ * @param {Object} altRegion An alternate region to use (rather than this node's). 
+ * @return {Object} An object representing the intersection of the regions. 
+ */
+Y.Node.prototype.inRegion = function(node2, all, altRegion) {
+    var node1 = Y.Node.getDOMNode(this);
+    if (node2 instanceof Y.Node) { // might be a region object
+        node2 = Y.Node.getDOMNode(node2);
+    }
+    return Y.DOM.inRegion(node1, node2, all, altRegion); 
+};
 
 
-
-}, '3.0.0pr2' ,{requires:['dom-screen']});
+}, '3.1.0' ,{requires:['dom-screen']});

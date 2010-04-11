@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('anim-xy', function(Y) {
 
@@ -11,7 +12,6 @@ YUI.add('anim-xy', function(Y) {
  * <code>to</code> attributes.
  * @module anim
  * @submodule anim-xy
- * @for Anim
  */
 
 var NUM = Number;
@@ -30,4 +30,4 @@ Y.Anim.behaviors.xy = {
 
 
 
-}, '3.0.0pr2' ,{requires:['anim-base', 'node-screen']});
+}, '3.1.0' ,{requires:['anim-base', 'node-screen']});

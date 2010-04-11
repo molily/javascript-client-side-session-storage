@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('anim-color', function(Y) {
 
@@ -11,7 +12,6 @@ YUI.add('anim-color', function(Y) {
  * and <code>from</code> attributes.
  * @module anim
  * @submodule anim-color
- * @for Anim
  */
 
 var NUM = Number;
@@ -22,7 +22,7 @@ Y.Anim.behaviors.color = {
         to = Y.Color.re_RGB.exec(Y.Color.toRGB(to));
 
         if (!from || from.length < 3 || !to || to.length < 3) {
-            Y.fail('invalid from or to passed to color behavior');
+            Y.error('invalid from or to passed to color behavior');
         }
 
         anim._node.setStyle(att, 'rgb(' + [
@@ -52,4 +52,4 @@ Y.each(['backgroundColor',
 );
 
 
-}, '3.0.0pr2' ,{requires:['anim-base', 'node-style']});
+}, '3.1.0' ,{requires:['anim-base']});

@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('node-event-simulate', function(Y) {
 
@@ -21,10 +22,10 @@ YUI.add('node-event-simulate', function(Y) {
      * @method simulate
      * @static
      */     
-    Y.Node.prototype.simulate = function(type, options){
+    Y.Node.prototype.simulate = function(type, options) {
         Y.Event.simulate(Y.Node.getDOMNode(this), type, options);
     };
 
 
 
-}, '3.0.0pr2' ,{requires:['node-base']});
+}, '3.1.0' ,{requires:['node-base', 'event-simulate']});

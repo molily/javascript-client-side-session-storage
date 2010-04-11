@@ -1,7 +1,8 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
-YUI.add("dd-drop-plugin",function(A){var B=function(C){C.node=C.owner;B.superclass.constructor.apply(this,arguments);};B.NAME="dd-drop-plugin";B.NS="drop";A.extend(B,A.DD.Drop);A.namespace("plugin");A.plugin.Drop=B;},"3.0.0pr2",{requires:["dd-drop"],skinnable:false});
+YUI.add("dd-drop-plugin",function(A){var B=function(C){C.node=C.host;B.superclass.constructor.apply(this,arguments);};B.NAME="dd-drop-plugin";B.NS="drop";A.extend(B,A.DD.Drop);A.namespace("Plugin");A.Plugin.Drop=B;},"3.1.0",{requires:["dd-drop"],skinnable:false});

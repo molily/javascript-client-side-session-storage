@@ -1,77 +1,148 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
-YUI.add('base', function(Y) {
+YUI.add('base-base', function(Y) {
 
     /**
-     * Base class support for objects requiring
-     * managed attributes and acting as event targets
+     * The base module provides the Base class, which objects requiring attribute and custom event support can extend. 
+     * The module also provides two ways to reuse code - It augments Base with the Plugin.Host interface which provides 
+     * plugin support and also provides the Base.build method which provides a way to build custom classes using extensions.
      *
      * @module base
      */
-    var L = Y.Lang,
-        O = Y.Object,
-        SEP = ":",
+
+    /**
+     * The base-base submodule provides the Base class without the Plugin support, provided by Plugin.Host, 
+     * and without the extension support provided by Base.build.
+     *
+     * @module base
+     * @submodule base-base
+     */
+    var O = Y.Object,
+        L = Y.Lang,
+        DOT = ".",
         DESTROY = "destroy",
         INIT = "init",
-        VALUE = "value",
         INITIALIZED = "initialized",
         DESTROYED = "destroyed",
         INITIALIZER = "initializer",
-        DESTRUCTOR = "destructor";
+        BUBBLETARGETS = "bubbleTargets",
+        _BUBBLETARGETS = "_bubbleTargets",
+        OBJECT_CONSTRUCTOR = Object.prototype.constructor,
+        DEEP = "deep",
+        SHALLOW = "shallow",
+        DESTRUCTOR = "destructor",
 
-    var ETP = Y.Event.Target.prototype;
+        Attribute = Y.Attribute;
 
     /**
      * <p>
-     * Provides a base class for managed attribute based
-     * objects, which handles the chaining of initializer and destructor methods
-     * across the hierarchy during init and destroy lifecycle methods and 
-     * handles automatic configuration of registered Attributes, through 
-     * the static <a href="#property_ATTRS">ATTRS</a> property.
+     * A base class which objects requiring attributes and custom event support can 
+     * extend. Base also handles the chaining of initializer and destructor methods across 
+     * the hierarchy as part of object construction and destruction. Additionally, attributes configured 
+     * through the static <a href="#property_Base.ATTRS">ATTRS</a> property for each class 
+     * in the hierarchy will be initialized by Base.
      * </p>
      *
-     * <p>The Base class also handles prefixing of event types with the static <a href="#property_NAME">NAME</a> 
-     * property for all events fired from instances of classes derived from Base.</p>
+     * <p>
+     * The static <a href="#property_Base.NAME">NAME</a> property of each class extending 
+     * from Base will be used as the identifier for the class, and is used by Base to prefix 
+     * all events fired by instances of that class.
+     * </p>
      *
-     * @constructor
      * @class Base
+     * @constructor
      * @uses Attribute
+     * @uses Plugin.Host
      *
-     * @param {Object} config Object literal of configuration property name/value pairs
+     * @param {Object} config Object with configuration property name/value pairs. The object can be 
+     * used to provide default values for the objects published attributes.
+     *
+     * <p>
+     * The config object can also contain the following non-attribute properties, providing a convenient 
+     * way to configure events listeners and plugins for the instance, as part of the constructor call:
+     * </p>
+     *
+     * <dl>
+     *     <dt>on</dt>
+     *     <dd>An event name to listener function map, to register event listeners for the "on" moment of the event. A constructor convenience property for the <a href="Base.html#method_on">on</a> method.</dd>
+     *     <dt>after</dt>
+     *     <dd>An event name to listener function map, to register event listeners for the "after" moment of the event. A constructor convenience property for the <a href="Base.html#method_after">after</a> method.</dd>
+     *     <dt>bubbleTargets</dt>
+     *     <dd>An object, or array of objects, to register as bubble targets for bubbled events fired by this instance. A constructor convenience property for the <a href="EventTarget.html#method_addTarget">addTarget</a> method.</dd>
+     *     <dt>plugins</dt>
+     *     <dd>A plugin, or array of plugins to be plugged into the instance (see PluginHost's plug method for signature details). A constructor convenience property for the <a href="Plugin.Host.html#method_plug">plug</a> method.</dd>
+     * </dl>
      */
-    var Base = function() {
+    function Base() {
         Y.log('constructor called', 'life', 'base');
-        Y.Attribute.call(this);
+
+        Attribute.call(this);
+
+        // If Plugin.Host has been augmented [ through base-pluginhost ], setup it's
+        // initial state, but don't initialize Plugins yet. That's done after initialization.
+        var PluginHost = Y.Plugin && Y.Plugin.Host;  
+        if (this._initPlugins && PluginHost) {
+            PluginHost.call(this);
+        }
+
+        if (this._lazyAddAttrs !== false) { this._lazyAddAttrs = true; }
+
+        /**
+         * The string used to identify the class of this object.
+         *
+         * @deprecated Use this.constructor.NAME
+         * @property name
+         * @type String
+         */
+        this.name = this.constructor.NAME;
+        this._eventPrefix = this.constructor.EVENT_PREFIX || this.constructor.NAME;
+
         this.init.apply(this, arguments);
-    };
+    }
+
+    /**
+     * The list of properties which can be configured for 
+     * each attribute (e.g. setter, getter, writeOnce, readOnly etc.)
+     *
+     * @property Base._ATTR_CFG
+     * @type Array
+     * @static
+     * @private
+     */
+    Base._ATTR_CFG = Attribute._ATTR_CFG.concat("cloneDefaultValue");
 
     /**
      * <p>
-     * Name string to be used to identify instances of 
+     * The string to be used to identify instances of 
      * this class, for example in prefixing events.
      * </p>
      * <p>
      * Classes extending Base, should define their own
-     * static NAME property.
+     * static NAME property, which should be camelCase by
+     * convention (e.g. MyClass.NAME = "myClass";).
      * </p>
-     * @property NAME
+     * @property Base.NAME
      * @type String
      * @static
      */
-    Base.NAME = 'base';
+    Base.NAME = "base";
 
     /**
-     * Object literal defining the set of attributes which
-     * will be available for instances of this class, and 
-     * how they are configured. See Attributes addAtt method
-     * for a description of configuration options available 
-     * for each attribute.
+     * The default set of attributes which will be available for instances of this class, and 
+     * their configuration. In addition to the configuration properties listed by 
+     * Attribute's <a href="Attribute.html#method_addAttr">addAttr</a> method, the attribute 
+     * can also be configured with a "cloneDefaultValue" property, which defines how the statically
+     * defined value field should be protected ("shallow", "deep" and false are supported values). 
      *
-     * @property ATTRS
+     * By default if the value is an object literal or an array it will be "shallow" cloned, to 
+     * protect the default value.
+     *
+     * @property Base.ATTRS
      * @type Object
      * @static
      */
@@ -81,7 +152,7 @@ YUI.add('base', function(Y) {
          * has been through the init lifecycle phase.
          *
          * @attribute initialized
-         * @readOnly
+         * @readonly
          * @default false
          * @type boolean
          */
@@ -95,7 +166,7 @@ YUI.add('base', function(Y) {
          * has been through the destroy lifecycle phase.
          *
          * @attribute destroyed
-         * @readOnly
+         * @readonly
          * @default false
          * @type boolean
          */
@@ -105,244 +176,28 @@ YUI.add('base', function(Y) {
         }
     };
 
-    /**
-     * The build configuration for the Base class.
-     * Defines the static fields which need to be aggregated,
-     * when this class is used as the main class passed to 
-     * the <a href="#method_build">Base.build</a> method.
-     *
-     * @property _buildCfg
-     * @type Object
-     * @static
-     * @final
-     * @private
-     */    
-    Base._buildCfg = {
-        aggregates : ["ATTRS"]
-    };
-
-    var _instances = {};
-
-    /**
-     * <p>
-     * Builds a constructor function (class) from the
-     * main function, and array of extension functions (classes)
-     * provided.
-     * </p>
-     * <p>
-     * The cfg object literal supports the following properties
-     * </p>
-     * <dl>
-     *    <dt>dynamic &#60;boolean&#62;</dt>
-     *    <dd>
-     *    <p>If true (default), a completely new class
-     *    is created which extends the main class, and acts as the 
-     *    host on which the extension classes are augmented.</p>
-     *    <p>If false, the extensions classes are augmented directly to
-     *    the main class, modifying the main classes prototype.</p>
-     *    </dd>
-     *    <dt>aggregates &#60;String[]&#62;</dt>
-     *    <dd>An array of static property names, which will get aggregated
-     *    on to the built class, in addition to the default properties build 
-     *    will always aggregate as defined by the main class' _buildCfg
-     *    property.
-     *    </dd>
-     * </dl>
-     *
-     * @method build
-     * @static
-     * @param {Function} main The main class on which to base the built class
-     * @param {Function[]} extensions The set of extension classes which will be
-     * augmented/aggregated to the built class.
-     * @param {Object} cfg
-     * @return {Function} A custom class, created from the provided main and extension classes
-     */
-    Base.build = function(main, extensions, cfg) {
-
-        var build = Base.build,
-
-            builtClass = build._getClass(main, cfg),
-            aggregates = build._getAggregates(main, cfg),
-            dynamic = builtClass._yuibuild.dynamic,
-
-            key = main.NAME,
-
-            i, l;
-
-        // Shallow isolate aggregates
-        if (dynamic) {
-            if (aggregates) {
-                for (i = 0, l = aggregates.length; i < l; ++i) {
-                    var val = aggregates[i];
-                    if (O.owns(main, val)) {
-                        builtClass[val] = L.isArray(main[val]) ? [] : {};
-                    }
-                }
-                Y.aggregate(builtClass, main, true, aggregates);
-            }
-        }
-
-        // Augment/Aggregate
-        for (i = 0, l = extensions.length; i < l; i++) {
-            var extClass = extensions[i];
-
-            if (aggregates) {
-                Y.aggregate(builtClass, extClass, true, aggregates);
-            }
-
-            // Old augment
-            Y.mix(builtClass, extClass, true, null, 1);
-
-            builtClass._yuibuild.exts.push(extClass);
-            key = key + ":" + Y.stamp(extClass);
-        }
-
-        builtClass._yuibuild.id = key;
-        builtClass.prototype.hasImpl = build._hasImpl;
-
-        if (dynamic) {
-            builtClass.NAME = main.NAME;
-            builtClass.prototype.constructor = builtClass;
-        }
-
-        return builtClass;
-    };
-    
-    Y.mix(Base.build, {
-
-        _template: function(main) {
-
-            function BuiltClass() {
-
-                BuiltClass.superclass.constructor.apply(this, arguments);
-
-                var f = BuiltClass._yuibuild.exts, 
-                    l = f.length;
-
-                for (var i = 0; i < l; i++) {
-                    f[i].apply(this, arguments);
-                }
-
-                return this;
-            }
-            Y.extend(BuiltClass, main);
-            return BuiltClass;
-        },
-
-        _hasImpl : function(extClass) {
-            if (this.constructor._yuibuild) {
-                var f = this.constructor._yuibuild.exts,
-                    l = f.length,
-                    i;
-
-                for (i = 0; i < l; i++) {
-                    if (f[i] === extClass) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        },
-
-        _getClass : function(main, cfg) {
-
-            // Create dynamic class or just modify main class
-            var dynamic = (cfg && false === cfg.dynamic) ? false : true,
-                builtClass = (dynamic) ? Base.build._template(main) : main;
-
-            builtClass._yuibuild = {
-                id: null,
-                exts : [],
-                dynamic : dynamic
-            };
-
-            return builtClass;
-        },
-
-        _getAggregates : function(main, cfg) {
-            var aggr = [],
-                cfgAggr = (cfg && cfg.aggregates),
-                c = main;
-
-            while (c && c.prototype) {
-                var classAggr = c._buildCfg && c._buildCfg.aggregates;
-                if (classAggr) {
-                    aggr = aggr.concat(classAggr);
-                }
-                c = c.superclass ? c.superclass.constructor : null;
-            }
-
-            if (cfgAggr) {
-                aggr = aggr.concat(cfgAggr);
-            }
-
-            return aggr;
-        }
-    });
-
-    /**
-     * <p>
-     * Creates a new object instance, based on a dynamically created custom class.
-     * The custom class is created from the main class passed in as the first parameter 
-     * along with the list of extension classes passed in
-     * as the second parameter using <a href="#method_build">Base.build</a> 
-     * with "dynamic" set to true. See the documentation for Base.build method 
-     * to see how the main class and extension classes are used.
-     * </p>
-     *
-     * <p>Any arguments following the 2nd argument are passed as arguments to the 
-     * constructor of the newly created class used to create the instance.</p>
-     * 
-     * @method create
-     * @static
-     *
-     * @param {Function} main The main class on which the instance it to be 
-     * based. This class will be extended to create the class for the custom instance
-     * @param {Array} extensions The list of extension classes used to augment the
-     * main class with.
-     * @param {Any*} args* 0..n arguments to pass to the constructor of the 
-     * newly created class, when creating the instance.
-     * @return {Object} An instance of the custom class
-     */
-    Base.create = function(main, extensions, args) {
-        var c = Base.build(main, extensions),
-            cArgs = Y.Array(arguments, 2, true);
-
-        function F(){}
-        F.prototype = c.prototype;
-
-        return c.apply(new F(), cArgs);
-    };
-
     Base.prototype = {
 
         /**
          * Init lifecycle method, invoked during construction.
-         * Fires the init event prior to invoking initializers on
-         * the class hierarchy.
-         * 
+         * Fires the init event prior to setting up attributes and 
+         * invoking initializers for the class hierarchy.
+         *
          * @method init
          * @final
          * @chainable
-         * @param {Object} config Object literal of configuration property name/value pairs
+         * @param {Object} config Object with configuration property name/value pairs
          * @return {Base} A reference to this object
          */
         init: function(config) {
             Y.log('init called', 'life', 'base');
 
-            /**
-             * The name string to be used to identify 
-             * this instance of object. 
-             * @property name
-             * @type String
-             */
-            this.name = this.constructor.NAME;
+            this._yuievt.config.prefix = this._eventPrefix;
 
             /**
              * <p>
              * Lifecycle event for the init phase, fired prior to initialization. 
-             * Invoking the preventDefault method on the event object provided 
+             * Invoking the preventDefault() method on the event object provided 
              * to subscribers will prevent initialization from occuring.
              * </p>
              * <p>
@@ -353,16 +208,54 @@ YUI.add('base', function(Y) {
              *
              * @event init
              * @preventable _defInitFn
-             * @param {Event.Facade} e Event object
-             * @param config Object literal of configuration name/value pairs
+             * @param {EventFacade} e Event object, with a cfg property which 
+             * refers to the configuration object passed to the constructor.
              */
             this.publish(INIT, {
                 queuable:false,
+                fireOnce:true,
+                defaultTargetOnly:true,
                 defaultFn:this._defInitFn
             });
-            this.fire(INIT, null, config);
+
+            this._preInitEventCfg(config);
+
+            this.fire(INIT, {cfg: config});
 
             return this;
+        },
+
+        /**
+         * Handles the special on, after and target properties which allow the user to
+         * easily configure on and after listeners as well as bubble targets during 
+         * construction, prior to init.
+         *
+         * @method _preInitEventCfg
+         * @param {Object} config The user configuration object
+         */
+        _preInitEventCfg : function(config) {
+            if (config) {
+                if (config.on) {
+                    this.on(config.on);
+                }
+                if (config.after) {
+                    this.after(config.after);
+                }
+            }
+
+            var i, l, target,
+                userTargets = (config && BUBBLETARGETS in config);
+
+            if (userTargets || _BUBBLETARGETS in this) {
+                target = userTargets ? (config && config.bubbleTargets) : this._bubbleTargets;
+                if (L.isArray(target)) {
+                    for (i = 0, l = target.length; i < l; i++) { 
+                        this.addTarget(target[i]);
+                    }
+                } else if (target) {
+                    this.addTarget(target);
+                }
+            }
         },
 
         /**
@@ -398,13 +291,17 @@ YUI.add('base', function(Y) {
              * </p>
              * @event destroy
              * @preventable _defDestroyFn
-             * @param {Event.Facade} e Event object
+             * @param {EventFacade} e Event object
              */
             this.publish(DESTROY, {
                 queuable:false,
+                fireOnce:true,
+                defaultTargetOnly:true,
                 defaultFn: this._defDestroyFn
             });
             this.fire(DESTROY);
+
+            this.detachAll();
             return this;
         },
 
@@ -412,14 +309,16 @@ YUI.add('base', function(Y) {
          * Default init event handler
          *
          * @method _defInitFn
-         * @param {Event.Facade} e Event object
-         * @param {Object} config Object literal of configuration property name/value pairs
+         * @param {EventFacade} e Event object, with a cfg property which 
+         * refers to the configuration object passed to the constructor.
          * @protected
          */
-        _defInitFn : function(e, config) {
-            _instances[Y.stamp(this)] = this;
-            this._initHierarchy(config);
-
+        _defInitFn : function(e) {
+            this._initHierarchy(e.cfg);
+            if (this._initPlugins) {
+                // Need to initPlugins manually, to handle constructor parsing, static Plug parsing
+                this._initPlugins(e.cfg);
+            }
             this._set(INITIALIZED, true);
         },
 
@@ -427,70 +326,225 @@ YUI.add('base', function(Y) {
          * Default destroy event handler
          *
          * @method _defDestroyFn
-         * @param {Event.Facade} e Event object
+         * @param {EventFacade} e Event object
          * @protected
          */
         _defDestroyFn : function(e) {
             this._destroyHierarchy();
-            delete _instances[this._yuid];
-
+            if (this._destroyPlugins) {
+                this._destroyPlugins();
+            }
             this._set(DESTROYED, true);
         },
 
         /**
-         * Returns the top down class hierarchy for this object,
-         * with Base being the first class in the array.
+         * Returns the class hierarchy for this object, with Base being the last class in the array.
          *
+         * @method _getClasses
          * @protected
-         * @return {Function[]} An Array of classes (constructor functions), making up the class heirarchy for this object
+         * @return {Function[]} An array of classes (constructor functions), making up the class hierarchy for this object.
+         * This value is cached the first time the method, or _getAttrCfgs, is invoked. Subsequent invocations return the 
+         * cached value.
          */
         _getClasses : function() {
             if (!this._classes) {
-                var c = this.constructor, 
-                    classes = [];
-
-                while (c && c.prototype) {
-                    classes.unshift(c);
-                    c = c.superclass ? c.superclass.constructor : null;
-                }
-                this._classes = classes;
+                this._initHierarchyData();
             }
-            return this._classes.concat();
+            return this._classes;
         },
 
         /**
-         * Initializes the class hierarchy rooted at this base class,
-         * which includes initializing attributes for each class defined 
-         * in the class's static <a href="#property_ATTRS">ATTRS</a> property and invoking the initializer 
-         * method on the prototype of each class in the hierarchy.
+         * Returns an aggregated set of attribute configurations, by traversing the class hierarchy.
+         *
+         * @method _getAttrCfgs
+         * @protected
+         * @return {Object} The hash of attribute configurations, aggregated across classes in the hierarchy
+         * This value is cached the first time the method, or _getClasses, is invoked. Subsequent invocations return
+         * the cached value.
+         */
+        _getAttrCfgs : function() {
+            if (!this._attrs) {
+                this._initHierarchyData();
+            }
+            return this._attrs;
+        },
+
+        /**
+         * A helper method used when processing ATTRS across the class hierarchy during 
+         * initialization. Returns a disposable object with the attributes defined for 
+         * the provided class, extracted from the set of all attributes passed in .
+         *
+         * @method _filterAttrCfs
+         * @private
+         *
+         * @param {Function} clazz The class for which the desired attributes are required.
+         * @param {Object} allCfgs The set of all attribute configurations for this instance. 
+         * Attributes will be removed from this set, if they belong to the filtered class, so
+         * that by the time all classes are processed, allCfgs will be empty.
          * 
-         * @method _initHierarchy
-         * @param {Object} userConf Object literal containing attribute name/value pairs
+         * @return {Object} The set of attributes belonging to the class passed in, in the form
+         * of an object with attribute name/configuration pairs.
+         */
+        _filterAttrCfgs : function(clazz, allCfgs) {
+            var cfgs = null, attr, attrs = clazz.ATTRS;
+
+            if (attrs) {
+                for (attr in attrs) {
+                    if (attrs.hasOwnProperty(attr) && allCfgs[attr]) {
+                        cfgs = cfgs || {};
+                        cfgs[attr] = allCfgs[attr];
+                        delete allCfgs[attr];
+                    }
+                }
+            }
+
+            return cfgs;
+        },
+
+        /**
+         * A helper method used by _getClasses and _getAttrCfgs, which determines both
+         * the array of classes and aggregate set of attribute configurations
+         * across the class hierarchy for the instance.
+         * 
+         * @method _initHierarchyData
          * @private
          */
-        _initHierarchy : function(userConf) {
-            var constr,
-                classes = this._getClasses();
+        _initHierarchyData : function() {
+            var c = this.constructor, 
+                classes = [],
+                attrs = [];
 
-            for (var ci = 0, cl = classes.length; ci < cl; ci++) {
+            while (c) {
+                // Add to classes
+                classes[classes.length] = c;
+
+                // Add to attributes
+                if (c.ATTRS) {
+                    attrs[attrs.length] = c.ATTRS;
+                }
+                c = c.superclass ? c.superclass.constructor : null;
+            }
+
+            this._classes = classes;
+            this._attrs = this._aggregateAttrs(attrs);
+        },
+
+        /**
+         * A helper method, used by _initHierarchyData to aggregate 
+         * attribute configuration across the instances class hierarchy.
+         *
+         * The method will potect the attribute configuration value to protect the statically defined 
+         * default value in ATTRS if required (if the value is an object literal, array or the 
+         * attribute configuration has cloneDefaultValue set to shallow or deep).
+         *
+         * @method _aggregateAttrs
+         * @private
+         * @param {Array} allAttrs An array of ATTRS definitions across classes in the hierarchy 
+         * (subclass first, Base last)
+         * @return {Object} The aggregate set of ATTRS definitions for the instance
+         */
+        _aggregateAttrs : function(allAttrs) {
+            var attr,
+                attrs,
+                cfg,
+                val,
+                path,
+                i, 
+                clone, 
+                cfgProps = Base._ATTR_CFG,
+                aggAttrs = {};
+
+            if (allAttrs) {
+                for (i = allAttrs.length-1; i >= 0; --i) {
+                    attrs = allAttrs[i];
+
+                    for (attr in attrs) {
+                        if (attrs.hasOwnProperty(attr)) {
+
+                            // Protect config passed in
+                            cfg = Y.mix({}, attrs[attr], true, cfgProps);
+
+                            val = cfg.value;
+                            clone = cfg.cloneDefaultValue;
+
+                            if (val) {
+                                if ( (clone === undefined && (OBJECT_CONSTRUCTOR === val.constructor || L.isArray(val))) || clone === DEEP || clone === true) {
+                                    Y.log('Cloning default value for attribute:' + attr, 'info', 'base');
+                                    cfg.value = Y.clone(val);
+                                } else if (clone === SHALLOW) {
+                                    Y.log('Merging default value for attribute:' + attr, 'info', 'base');
+                                    cfg.value = Y.merge(val);
+                                }
+                                // else if (clone === false), don't clone the static default value. 
+                                // It's intended to be used by reference.
+                            }
+
+                            path = null;
+                            if (attr.indexOf(DOT) !== -1) {
+                                path = attr.split(DOT);
+                                attr = path.shift();
+                            }
+
+                            if (path && aggAttrs[attr] && aggAttrs[attr].value) {
+                                O.setValue(aggAttrs[attr].value, path, val);
+                            } else if (!path){
+                                if (!aggAttrs[attr]) {
+                                    aggAttrs[attr] = cfg;
+                                } else {
+                                    Y.mix(aggAttrs[attr], cfg, true, cfgProps);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return aggAttrs;
+        },
+
+        /**
+         * Initializes the class hierarchy for the instance, which includes 
+         * initializing attributes for each class defined in the class's 
+         * static <a href="#property_Base.ATTRS">ATTRS</a> property and 
+         * invoking the initializer method on the prototype of each class in the hierarchy.
+         *
+         * @method _initHierarchy
+         * @param {Object} userVals Object with configuration property name/value pairs
+         * @private
+         */
+        _initHierarchy : function(userVals) {
+            var lazy = this._lazyAddAttrs,
+                constr,
+                constrProto,
+                ci,
+                ei,
+                el,
+                classes = this._getClasses(),
+                attrCfgs = this._getAttrCfgs();
+
+            for (ci = classes.length-1; ci >= 0; ci--) {
+
                 constr = classes[ci];
+                constrProto = constr.prototype;
 
-                if (constr._yuibuild && constr._yuibuild.exts && !constr._yuibuild.dynamic) {
-                    for (var ei = 0, el = constr._yuibuild.exts.length; ei < el; ei++) {
+                if (constr._yuibuild && constr._yuibuild.exts) {
+                    for (ei = 0, el = constr._yuibuild.exts.length; ei < el; ei++) {
                         constr._yuibuild.exts[ei].apply(this, arguments);
                     }
                 }
 
-                this._initAtts(constr.ATTRS, userConf);
+                this.addAttrs(this._filterAttrCfgs(constr, attrCfgs), userVals, lazy);
 
-                if (O.owns(constr.prototype, INITIALIZER)) {
-                    constr.prototype[INITIALIZER].apply(this, arguments);
+                // Using INITIALIZER in hasOwnProperty check, for performance reasons (helps IE6 avoid GC thresholds when
+                // referencing string literals). Not using it in apply, again, for performance "." is faster. 
+                if (constrProto.hasOwnProperty(INITIALIZER)) {
+                    constrProto.initializer.apply(this, arguments);
                 }
             }
         },
 
         /**
-         * Destroys the class hierarchy rooted at this base class by invoking
+         * Destroys the class hierarchy for this instance by invoking
          * the descructor method on the prototype of each class in the hierarchy.
          *
          * @method _destroyHierarchy
@@ -498,12 +552,15 @@ YUI.add('base', function(Y) {
          */
         _destroyHierarchy : function() {
             var constr,
+                constrProto,
+                ci, cl,
                 classes = this._getClasses();
 
-            for (var ci = classes.length-1; ci >= 0; ci--) {
+            for (ci = 0, cl = classes.length; ci < cl; ci++) {
                 constr = classes[ci];
-                if (O.owns(constr.prototype, DESTRUCTOR)) {
-                    constr.prototype[DESTRUCTOR].apply(this, arguments);
+                constrProto = constr.prototype;
+                if (constrProto.hasOwnProperty(DESTRUCTOR)) {
+                    constrProto.destructor.apply(this, arguments);
                 }
             }
         },
@@ -511,195 +568,347 @@ YUI.add('base', function(Y) {
         /**
          * Default toString implementation. Provides the constructor NAME
          * and the instance ID.
-         * 
+         *
          * @method toString
          * @return {String} String representation for this object
          */
         toString: function() {
             return this.constructor.NAME + "[" + Y.stamp(this) + "]";
-        },
-
-        /**
-         * <p>
-         * Subscribe to a custom event hosted by this object.
-         * </p>
-         * <p>
-         * Overrides Event.Target's <a href="Event.Target.html#method_subscribe">subscribe</a> method, to add the name prefix 
-         * of the instance to the event type, if absent.
-         * </p>
-         * 
-         * @method subscribe
-         * @param {String} type The type of event to subscribe to. If 
-         * the type string does not contain a prefix ("prefix:eventType"), 
-         * the name property of the instance will be used as the default prefix.
-         * @param {Function} fn The subscribed callback function, invoked when the event is fired.
-         * @param {Object} context Optional execution context for the callback.
-         * @param {Any*} args* 0..n params to supply to the callback
-         * 
-         * @return {Event.Handle} An event handle which can be used to unsubscribe the subscribed callback.
-         */
-        subscribe : function() {
-            var a = arguments;
-            a[0] = this._prefixEvtType(a[0]);
-            return ETP.subscribe.apply(this, a);
-        },
-
-        /**
-         * <p>
-         * Fire a custom event by name.  The callback functions will be executed
-         * from the context specified when the event was created, and with the 
-         * following parameters.
-         * </p>
-         * <p>
-         * Overrides Event.Target's <a href="Event.Target.html#method_fire">fire</a> method, to add the name prefix 
-         * of the instance to the event type, if absent.
-         * </p>
-         * 
-         * @method fire
-         * @param {String|Object} type The type of the event, or an object that contains
-         * a 'type' property. If the type does not contain a prefix ("prefix:eventType"),
-         * the name property of the instance will be used as the default prefix.
-         * @param {Any*} args* 0..n Additional arguments to pass to subscribers.
-         * @return {boolean} The return value from Event Target's <a href="Event.Target.html#method_fire">fire</a> method.
-         *
-         */
-        fire : function() {
-            var a = arguments;
-            if (L.isString(a[0])) {
-                a[0] = this._prefixEvtType(a[0]);
-            } else if (a[0].type){
-                a[0].type = this._prefixEvtType(a[0].type);
-            }
-            return ETP.fire.apply(this, a);
-        },
-
-        /**
-         * <p>
-         * Creates a new custom event of the specified type.  If a custom event
-         * by that name already exists, it will not be re-created.  In either
-         * case the custom event is returned. 
-         * </p>
-         * <p>
-         * Overrides Event.Target's <a href="Event.Target.html#method_publish">publish</a> method, to add the name prefix 
-         * of the instance to the event type, if absent.
-         * </p>
-         *
-         * @method publish
-         * @param {String} type  The type, or name of the event. If the type does not 
-         * contain a prefix ("prefix:eventType"), the name property of the instance will 
-         * be used as the default prefix.
-         * @param {Object} opts Optional config params (see Event.Target <a href="Event.Target.html#method_publish">publish</a> for details)
-         * @return {Event.Custom} The published custom event object
-         */
-        publish : function() {
-            var a = arguments;
-            a[0] = this._prefixEvtType(a[0]);
-            return ETP.publish.apply(this, a);
-        },
-
-        /**
-         * <p>
-         * Subscribe to a custom event hosted by this object.  The
-         * supplied callback will execute <em>after</em> any listeners added
-         * via the subscribe method, and after the default function,
-         * if configured for the event, has executed.
-         * </p>
-         * <p>
-         * Overrides Event.Target's <a href="Event.Target.html#method_after">after</a> method, to add the name prefix 
-         * of the instance to the event type, if absent.
-         * </p>
-         * @method after
-         * @param {String} type The type of event to subscribe to. If 
-         * the type string does not contain a prefix ("prefix:eventType"), 
-         * the name property of the instance will be used as the default prefix.
-         * @param {Function} fn  The subscribed callback function
-         * @param {Object} context Optional execution context for the callback
-         * @param {Any*} args* 0..n params to supply to the callback
-         * @return {Event.Handle} Event handle which can be used to unsubscribe the subscribed callback.
-         */
-        after : function() {
-            var a = arguments;
-            a[0] = this._prefixEvtType(a[0]);
-            return ETP.after.apply(this, a);
-        },
-
-        /**
-         * <p>
-         * Unsubscribes one or more listeners the from the specified event.
-         * </p>
-         * <p>
-         * Overrides Event.Target's <a href="Event.Target.html#method_unsubscribe">unsubscribe</a> method, to add the name prefix 
-         * of the instance to the event type, if absent.
-         * </p>
-         * @method unsubscribe
-         * @param {String|Object} type Either the handle to the subscriber or the 
-         *                        type of event.  If the type
-         *                        is not specified, it will attempt to remove
-         *                        the listener from all hosted events. If 
-         *                        the type string does not contain a prefix 
-         *                        ("prefix:eventType"), the name property of the 
-         *                        instance will be used as the default prefix.
-         * @param {Function} fn The subscribed function to unsubscribe, if not
-         *                          supplied, all subscribers will be removed.
-         * @param {Object} context The custom object passed to subscribe.  This is
-         *                        optional, but if supplied will be used to
-         *                        disambiguate multiple listeners that are the same
-         *                        (e.g., you subscribe many object using a function
-         *                        that lives on the prototype)
-         * @return {boolean} true if the subscriber was found and detached.
-         */
-        unsubscribe: function(type, fn, context) {
-            var a = arguments;
-            if (L.isString(a[0])) {
-                a[0] = this._prefixEvtType(a[0]);
-            }
-            return ETP.unsubscribe.apply(this, a);
-        },
-
-        /**
-         * <p>
-         * Removes all listeners from the specified event.  If the event type
-         * is not specified, all listeners from all hosted custom events will
-         * be removed.
-         * </p>
-         * <p>
-         * Overrides Event.Target's <a href="Event.Target.html#method_unsubscribeAll">unsubscribeAll</a> method, to add the name prefix 
-         * of the instance to the event type, if absent.
-         * </p>
-         * @method unsubscribeAll
-         * @param {String} type The type, or name of the event. If 
-         * the type string does not contain a prefix ("prefix:eventType"), 
-         * the name property of the instance will be used as the default prefix
-         * @return {int} The number of listeners unsubscribed
-         */
-        unsubscribeAll: function(type) {
-            var a = arguments;
-            a[0] = this._prefixEvtType(a[0]);
-            return ETP.unsubscribeAll.apply(this, a);
-        },
-
-        /**
-         * Utility method to prefix the event name with the
-         * name property of the instance, if absent
-         *
-         * @method _prefixEvtType
-         * @private
-         * @param {String} type The event name
-         * @return {String} The prefixed event name
-         */
-        _prefixEvtType: function(type) {
-            if (type.indexOf(SEP) === -1 && this.name) {
-               type = this.name + ":" + type;
-            }
-            return type;
         }
+
     };
 
-    Y.mix(Base, Y.Attribute, false, null, 1);
+    // Straightup augment, no wrapper functions
+    Y.mix(Base, Attribute, false, null, 1);
 
+    // Fix constructor
     Base.prototype.constructor = Base;
+
     Y.Base = Base;
 
 
+}, '3.1.0' ,{requires:['attribute-base']});
+YUI.add('base-pluginhost', function(Y) {
 
-}, '3.0.0pr2' ,{requires:['attribute']});
+    /**
+     * The base-pluginhost submodule adds Plugin support to Base, by augmenting Base with 
+     * Plugin.Host and setting up static (class level) Base.plug and Base.unplug methods.
+     *
+     * @module base
+     * @submodule base-pluginhost
+     * @for Base
+     */
+
+    var Base = Y.Base,
+        PluginHost = Y.Plugin.Host;
+
+    Y.mix(Base, PluginHost, false, null, 1);
+
+    /**
+     * Alias for <a href="Plugin.Host.html#method_Plugin.Host.plug">Plugin.Host.plug</a>. See aliased 
+     * method for argument and return value details.
+     *
+     * @method Base.plug
+     * @static
+     */
+    Base.plug = PluginHost.plug;
+
+    /**
+     * Alias for <a href="Plugin.Host.html#method_Plugin.Host.unplug">Plugin.Host.unplug</a>. See the 
+     * aliased method for argument and return value details.
+     *
+     * @method Base.unplug
+     * @static
+     */
+    Base.unplug = PluginHost.unplug;
+
+
+}, '3.1.0' ,{requires:['base-base', 'pluginhost']});
+YUI.add('base-build', function(Y) {
+
+    /**
+     * The base-build submodule provides Base.build functionality, which
+     * can be used to create custom classes, by aggregating extensions onto 
+     * a main class.
+     *
+     * @module base
+     * @submodule base-build
+     * @for Base
+     */
+    var Base = Y.Base,
+        L = Y.Lang,
+        build;
+
+    Base._build = function(name, main, extensions, px, sx, cfg) {
+
+        var build = Base._build,
+
+            builtClass = build._ctor(main, cfg),
+            buildCfg = build._cfg(main, cfg),
+
+            _mixCust = build._mixCust,
+
+            aggregates = buildCfg.aggregates,
+            custom = buildCfg.custom,
+
+            dynamic = builtClass._yuibuild.dynamic,
+
+            i, l, val, extClass;
+
+        if (dynamic && aggregates) {
+            for (i = 0, l = aggregates.length; i < l; ++i) {
+                val = aggregates[i];
+                if (main.hasOwnProperty(val)) {
+                    builtClass[val] = L.isArray(main[val]) ? [] : {};
+                }
+            }
+        }
+
+        // Augment/Aggregate
+        for (i = 0, l = extensions.length; i < l; i++) {
+            extClass = extensions[i];
+
+            // Prototype, old non-displacing augment
+            Y.mix(builtClass, extClass, true, null, 1);
+             // Custom Statics
+            _mixCust(builtClass, extClass, aggregates, custom);
+
+            builtClass._yuibuild.exts.push(extClass);
+        }
+
+        if (px) {
+            Y.mix(builtClass.prototype, px, true);
+        }
+
+        if (sx) {
+            Y.mix(builtClass, build._clean(sx, aggregates, custom), true);
+            _mixCust(builtClass, sx, aggregates, custom);
+        }
+
+        builtClass.prototype.hasImpl = build._impl;
+
+        if (dynamic) {
+            builtClass.NAME = name;
+            builtClass.prototype.constructor = builtClass;
+        }
+
+        return builtClass;
+    };
+
+    build = Base._build;
+
+    Y.mix(build, {
+
+        _mixCust: function(r, s, aggregates, custom) {
+
+            if (aggregates) {
+                Y.aggregate(r, s, true, aggregates);
+            }
+
+            if (custom) {
+                for (var j in custom) {
+                    if (custom.hasOwnProperty(j)) {
+                        custom[j](j, r, s);
+                    }
+                }
+            }
+        },
+
+        _tmpl: function(main) {
+
+            function BuiltClass() {
+                BuiltClass.superclass.constructor.apply(this, arguments);
+            }
+            Y.extend(BuiltClass, main);
+
+            return BuiltClass;
+        },
+
+        _impl : function(extClass) {
+            var classes = this._getClasses(), i, l, cls, exts, ll, j;
+            for (i = 0, l = classes.length; i < l; i++) {
+                cls = classes[i];
+                if (cls._yuibuild) {
+                    exts = cls._yuibuild.exts;
+                    ll = exts.length;
+    
+                    for (j = 0; j < ll; j++) {
+                        if (exts[j] === extClass) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        },
+
+        _ctor : function(main, cfg) {
+
+           var dynamic = (cfg && false === cfg.dynamic) ? false : true,
+                builtClass = (dynamic) ? build._tmpl(main) : main;
+
+            builtClass._yuibuild = {
+                id: null,
+                exts : [],
+                dynamic: dynamic
+            };
+
+            return builtClass;
+        },
+
+        _cfg : function(main, cfg) {
+            var aggr = [], 
+                cust = {},
+                buildCfg,
+                cfgAggr = (cfg && cfg.aggregates),
+                cfgCustBuild = (cfg && cfg.custom),
+                c = main;
+
+            while (c && c.prototype) {
+                buildCfg = c._buildCfg; 
+                if (buildCfg) {
+                    if (buildCfg.aggregates) {
+                        aggr = aggr.concat(buildCfg.aggregates);
+                    }
+                    if (buildCfg.custom) {
+                        Y.mix(cust, buildCfg.custom, true);
+                    }
+                }
+                c = c.superclass ? c.superclass.constructor : null;
+            }
+
+            if (cfgAggr) {
+                aggr = aggr.concat(cfgAggr);
+            }
+            if (cfgCustBuild) {
+                Y.mix(cust, cfg.cfgBuild, true);
+            }
+
+            return {
+                aggregates: aggr,
+                custom: cust
+            };
+        },
+
+        _clean : function(sx, aggregates, custom) {
+            var prop, i, l, sxclone = Y.merge(sx);
+
+            for (prop in custom) {
+                if (sxclone.hasOwnProperty(prop)) {
+                    delete sxclone[prop];
+                }
+            }
+
+            for (i = 0, l = aggregates.length; i < l; i++) {
+                prop = aggregates[i];
+                if (sxclone.hasOwnProperty(prop)) {
+                    delete sxclone[prop];
+                }
+            }
+
+            return sxclone;
+        }
+    });
+
+    /**
+     * <p>
+     * Builds a custom constructor function (class) from the
+     * main function, and array of extension functions (classes)
+     * provided. The NAME field for the constructor function is 
+     * defined by the first argument passed in.
+     * </p>
+     * <p>
+     * The cfg object supports the following properties
+     * </p>
+     * <dl>
+     *    <dt>dynamic &#60;boolean&#62;</dt>
+     *    <dd>
+     *    <p>If true (default), a completely new class
+     *    is created which extends the main class, and acts as the 
+     *    host on which the extension classes are augmented.</p>
+     *    <p>If false, the extensions classes are augmented directly to
+     *    the main class, modifying the main class' prototype.</p>
+     *    </dd>
+     *    <dt>aggregates &#60;String[]&#62;</dt>
+     *    <dd>An array of static property names, which will get aggregated
+     *    on to the built class, in addition to the default properties build 
+     *    will always aggregate as defined by the main class' static _buildCfg
+     *    property.
+     *    </dd>
+     * </dl>
+     *
+     * @method Base.build
+     * @static
+     * @param {Function} name The name of the new class. Used to defined the NAME property for the new class.
+     * @param {Function} main The main class on which to base the built class
+     * @param {Function[]} extensions The set of extension classes which will be
+     * augmented/aggregated to the built class.
+     * @param {Object} cfg Optional. Build configuration for the class (see description).
+     * @return {Function} A custom class, created from the provided main and extension classes
+     */
+    Base.build = function(name, main, extensions, cfg) {
+        return build(name, main, extensions, null, null, cfg);
+    };
+
+    /**
+     * <p>Creates a new class (constructor function) which extends the base class passed in as the second argument, 
+     * and mixes in the array of extensions provided.</p>
+     * <p>Prototype properties or methods can be added to the new class, using the px argument (similar to Y.extend).</p>
+     * <p>Static properties or methods can be added to the new class, using the sx argument (similar to Y.extend).</p>
+     * <p>
+     * 
+     * </p>
+     * @method Base.create
+     * @static
+     * @param {Function} name The name of the newly created class. Used to defined the NAME property for the new class.
+     * @param {Function} main The base class which the new class should extend. This class needs to be Base or a class derived from base (e.g. Widget).
+     * @param {Function[]} extensions The list of extensions which will be mixed into the built class.
+     * @return {Function} The newly created class.
+     */
+    Base.create = function(name, base, extensions, px, sx) {
+        return build(name, base, extensions, px, sx);
+    };
+
+    /**
+     * <p>Mixes in a list of extensions to an existing class.</p>
+     * @method Base.mix
+     * @static
+     * @param {Function} main The existing class into which the extensions should be mixed.  The class needs to be Base or class derived from base (e.g. Widget)
+     * @param {Function[]} extensions The set of extension classes which will mixed into the existing main class.
+     * @return {Function} The modified main class, with extensions mixed in.
+     */
+    Base.mix = function(main, extensions) {
+        return build(null, main, extensions, null, null, {dynamic:false});
+    };
+
+    /**
+     * The build configuration for the Base class.
+     *
+     * Defines the static fields which need to be aggregated
+     * when the Base class is used as the main class passed to
+     * the <a href="#method_Base.build">Base.build</a> method.
+     *
+     * @property Base._buildCfg
+     * @type Object
+     * @static
+     * @final
+     * @private
+     */
+    Base._buildCfg = {
+        custom : { 
+            ATTRS : function(prop, r, s) {
+                r[prop] = r[prop] || {};
+                if (s[prop]) {
+                    Y.aggregate(r[prop], s[prop], true);
+                }
+            }
+        },
+        aggregates : ["_PLUG", "_UNPLUG"]
+    };
+
+
+}, '3.1.0' ,{requires:['base-base']});
+
+
+YUI.add('base', function(Y){}, '3.1.0' ,{use:['base-base', 'base-pluginhost', 'base-build']});
+

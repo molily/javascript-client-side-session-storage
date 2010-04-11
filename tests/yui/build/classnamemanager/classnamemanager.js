@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('classnamemanager', function(Y) {
 
@@ -26,8 +27,8 @@ YUI.add('classnamemanager', function(Y) {
 
 // String constants
 var CLASS_NAME_PREFIX = 'classNamePrefix',
-	CLASS_NAME_DELIMITER = 'classNameDelimiter';
-
+	CLASS_NAME_DELIMITER = 'classNameDelimiter',
+    CONFIG = Y.config;
 
 // Global config
 
@@ -39,8 +40,7 @@ var CLASS_NAME_PREFIX = 'classNamePrefix',
  * @default "yui"
  * @static
  */
-Y.config[CLASS_NAME_PREFIX] = Y.config[CLASS_NAME_PREFIX] || 'yui';
-
+CONFIG[CLASS_NAME_PREFIX] = CONFIG[CLASS_NAME_PREFIX] || 'yui3';
 
 /**
  * Configuration property indicating the delimiter used to compose all CSS class names in
@@ -51,14 +51,12 @@ Y.config[CLASS_NAME_PREFIX] = Y.config[CLASS_NAME_PREFIX] || 'yui';
  * @default "-"
  * @static
  */
-Y.config[CLASS_NAME_DELIMITER] = Y.config[CLASS_NAME_DELIMITER] || '-';
-
+CONFIG[CLASS_NAME_DELIMITER] = CONFIG[CLASS_NAME_DELIMITER] || '-';
 
 Y.ClassNameManager = function () {
 
-	var sPrefix = Y.config[CLASS_NAME_PREFIX],
-		sDelimiter = Y.config[CLASS_NAME_DELIMITER],
-		classNames = {};
+	var sPrefix    = CONFIG[CLASS_NAME_PREFIX],
+		sDelimiter = CONFIG[CLASS_NAME_DELIMITER];
 
 	return {
 
@@ -67,26 +65,27 @@ Y.ClassNameManager = function () {
 		 * <code>Y.config.classNamePrefix</code> attribute + the provided strings.
 		 * Uses the <code>Y.config.classNameDelimiter</code> attribute to delimit the 
 		 * provided strings. E.g. Y.ClassNameManager.getClassName('foo','bar'); // yui-foo-bar
-		 * 
-		 * 
+		 *
 		 * @method getClassName
-		 * @param {String}+ one or more classname bits to be joined and prefixed
+		 * @param {String}+ classnameSection one or more classname sections to be joined
+		 * @param {Boolean} skipPrefix If set to true, the classname will not be prefixed with the default Y.config.classNameDelimiter value.  
 		 */
-		getClassName: function (c,x) {
-	
-			// Test for multiple classname bits
-			if (x) {
-				c = Y.Array(arguments,0,true).join(sDelimiter);
-			}
-		
-			// memoize in classNames map
-			return classNames[c] || (classNames[c] = sPrefix + sDelimiter + c);
-	
-		}
-	
+		getClassName: Y.cached(function () {
+
+            var args = Y.Array(arguments);
+
+            if (args[args.length-1] !== true) {
+                args.unshift(sPrefix);
+            } else {
+                args.pop();
+            }
+
+			return args.join(sDelimiter);
+		})
+
 	};
 
 }();
 
 
-}, '3.0.0pr2' );
+}, '3.1.0' );

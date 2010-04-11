@@ -1,28 +1,33 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('anim-node-plugin', function(Y) {
 
 /**
  *  Binds an Anim instance to a Node instance
  * @module anim
+ * @class Plugin.NodeFX
+ * @extends Base
  * @submodule anim-node-plugin
  */
 
-Y.namespace('Plugin');
-Y.Plugin.NodeFX = function(config) {
-    config.node = config.owner;
-    Y.Plugin.NodeFX.superclass.constructor.apply(this, arguments);
+var NodeFX = function(config) {
+    config = (config) ? Y.merge(config) : {};
+    config.node = config.host;
+    NodeFX.superclass.constructor.apply(this, arguments);
 };
 
-Y.Plugin.NodeFX.NAME = "nodefxplugin";
-Y.Plugin.NodeFX.NS = "fx";
+NodeFX.NAME = "nodefx";
+NodeFX.NS = "fx";
 
-Y.extend(Y.Plugin.NodeFX, Y.Anim);
+Y.extend(NodeFX, Y.Anim);
+
+Y.namespace('Plugin');
+Y.Plugin.NodeFX = NodeFX;
 
 
-
-}, '3.0.0pr2' ,{requires:['anim-base', 'node-base']});
+}, '3.1.0' ,{requires:['node-pluginhost', 'anim-base']});

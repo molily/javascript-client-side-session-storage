@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('anim-scroll', function(Y) {
 
@@ -11,11 +12,11 @@ YUI.add('anim-scroll', function(Y) {
  * and <code>from</code> attributes.
  * @module anim
  * @submodule anim-scroll
- * @for Anim
  */
 
 var NUM = Number;
 
+//TODO: deprecate for scrollTop/Left properties?
 Y.Anim.behaviors.scroll = {
     set: function(anim, att, from, to, elapsed, duration, fn) {
         var
@@ -41,4 +42,4 @@ Y.Anim.behaviors.scroll = {
 
 
 
-}, '3.0.0pr2' ,{requires:['anim-base', 'node-base']});
+}, '3.1.0' ,{requires:['anim-base']});

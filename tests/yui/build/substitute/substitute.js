@@ -1,16 +1,18 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
+YUI.add('substitute', function(Y) {
+
 /**
  * String variable substitution and string formatting.
  * If included, the substitute method is added to the YUI instance.
  *
  * @module substitute
  */
-YUI.add("substitute", function(Y) {
 
     var L = Y.Lang, DUMP='dump', SPACE=' ', LBRACE='{', RBRACE='}',
 
@@ -38,7 +40,6 @@ YUI.add("substitute", function(Y) {
      * in the YUI module.
      *
      * @method substitute
-     * @for YUI
      * @param s {string} The string that will be modified.
      * @param o An object containing the replacement values
      * @param f {function} An optional function that can be used to
@@ -47,11 +48,13 @@ YUI.add("substitute", function(Y) {
      *                     the key inside of the braces.
      * @return {string} the substituted string
      */
-    substitute = function (s, o, f) {
-        var i, j, k, key, v, meta, saved=[], token;
+
+    substitute = function (s, o, f, recurse) {
+        var i, j, k, key, v, meta, saved=[], token, dump,
+            lidx = s.length;
 
         for (;;) {
-            i = s.lastIndexOf(LBRACE);
+            i = s.lastIndexOf(LBRACE, lidx);
             if (i < 0) {
                 break;
             }
@@ -88,7 +91,7 @@ YUI.add("substitute", function(Y) {
                         meta = meta || "";
 
                         // look for the keyword 'dump', if found force obj dump
-                        var dump = meta.indexOf(DUMP);
+                        dump = meta.indexOf(DUMP);
                         if (dump > -1) {
                             meta = meta.substring(4);
                         }
@@ -112,12 +115,15 @@ YUI.add("substitute", function(Y) {
 
             s = s.substring(0, i) + v + s.substring(j + 1);
 
+            if (!recurse) {
+                lidx = i-1;
+            }
 
         }
 
         // restore saved {block}s
         for (i=saved.length-1; i>=0; i=i-1) {
-            s = s.replace(new RegExp("~-" + i + "-~"), "{"  + saved[i] + "}", "g");
+            s = s.replace(new RegExp("~-" + i + "-~"), LBRACE  + saved[i] + RBRACE, "g");
         }
 
         return s;
@@ -127,6 +133,6 @@ YUI.add("substitute", function(Y) {
     Y.substitute = substitute;
     L.substitute = substitute;
 
-}, "3.0.0pr2", {
-    optional: ['dump']
-});
+
+
+}, '3.1.0' ,{optional:['dump']});

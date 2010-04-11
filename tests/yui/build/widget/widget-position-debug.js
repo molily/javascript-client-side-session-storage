@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('widget-position', function(Y) {
 
@@ -16,8 +17,10 @@ YUI.add('widget-position', function(Y) {
 
         XY_COORD = "xy",
 
+        POSITION = "position",
         POSITIONED = "positioned",
         BOUNDING_BOX = "boundingBox",
+        RELATIVE = "relative",
 
         RENDERUI = "renderUI",
         BINDUI = "bindUI",
@@ -46,7 +49,7 @@ YUI.add('widget-position', function(Y) {
     /**
      * Static property used to define the default attribute 
      * configuration introduced by WidgetPosition.
-     * 
+     *
      * @property WidgetPosition.ATTRS
      * @static
      * @type Object
@@ -62,12 +65,13 @@ YUI.add('widget-position', function(Y) {
          * xy attribute. Changes in position can be monitored by listening for xyChange events.
          */
         x: {
-            set: function(val) {
+            setter: function(val) {
                 this._setX(val);
             },
-            get: function() {
+            getter: function() {
                 return this._getX();
-            }
+            },
+            lazyAdd:false
         },
 
         /**
@@ -79,12 +83,13 @@ YUI.add('widget-position', function(Y) {
          * xy attribute. Changes in position can be monitored by listening for xyChange events.
          */
         y: {
-            set: function(val) {
+            setter: function(val) {
                 this._setY(val);
             },
-            get: function() {
+            getter: function() {
                 return this._getY();
-            }
+            },
+            lazyAdd: false
         },
 
         /**
@@ -137,6 +142,10 @@ YUI.add('widget-position', function(Y) {
          * @protected
          */
         _syncUIPosition : function() {
+            var posNode = this._posNode;
+            if (posNode.getStyle(POSITION) === RELATIVE) {
+                this.syncXY();
+            }
             this._uiSetXY(this.get(XY_COORD));
         },
 
@@ -200,7 +209,7 @@ YUI.add('widget-position', function(Y) {
          * @param {Number} val The X page co-ordinate value
          */
         _setX : function(val) {
-            this.set(XY_COORD, [val, this.get(XY_COORD)[0]]);
+            this.set(XY_COORD, [val, this.get(XY_COORD)[1]]);
         },
 
         /**
@@ -211,7 +220,7 @@ YUI.add('widget-position', function(Y) {
          * @param {Number} val The Y page co-ordinate value
          */
         _setY : function(val) {
-            this.set(XY_COORD, [this.get(XY_COORD)[1], val]);
+            this.set(XY_COORD, [this.get(XY_COORD)[0], val]);
         },
 
         /**
@@ -242,7 +251,7 @@ YUI.add('widget-position', function(Y) {
          * 
          * @method _afterXYChange
          * @protected
-         * @param {Event.Facade} e The event facade for the attribute change
+         * @param {EventFacade} e The event facade for the attribute change
          */
         _afterXYChange : function(e) {
             if (e.src != UI) {
@@ -265,5 +274,4 @@ YUI.add('widget-position', function(Y) {
     Y.WidgetPosition = Position;
 
 
-
-}, '3.0.0pr2' ,{requires:['widget']});
+}, '3.1.0' ,{requires:['widget']});

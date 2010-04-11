@@ -1,28 +1,30 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('dd-plugin', function(Y) {
 
+
        /**
-        * This is a simple Drag plugin that can be attached to a Node via the plug method.
-        * @module dd-plugin
+        * Simple Drag plugin that can be attached to a Node via the plug method.
+        * @module dd
         * @submodule dd-plugin
         */
        /**
-        * This is a simple Drag plugin that can be attached to a Node via the plug method.
-        * @class DragPlugin
-        * @extends Drag
+        * Simple Drag plugin that can be attached to a Node via the plug method.
+        * @class Drag
+        * @extends DD.Drag
         * @constructor
-        * @namespace plugin
+        * @namespace Plugin
         */
 
 
         var Drag = function(config) {
-            config.node = config.owner;
-            Drag.superclass.constructor.apply(this, arguments);
+            config.node = ((Y.Widget && config.host instanceof Y.Widget) ? config.host.get('boundingBox') : config.host);
+            Drag.superclass.constructor.call(this, config);
         };
         
         /**
@@ -31,6 +33,7 @@ YUI.add('dd-plugin', function(Y) {
         * @type {String}
         */
         Drag.NAME = "dd-plugin";
+
         /**
         * @property NS
         * @description The Drag instance will be placed on the Node instance under the dd namespace. It can be accessed via Node.dd;
@@ -40,9 +43,11 @@ YUI.add('dd-plugin', function(Y) {
 
 
         Y.extend(Drag, Y.DD.Drag);
-        Y.namespace('plugin');
-        Y.plugin.Drag = Drag;
+        Y.namespace('Plugin');
+        Y.Plugin.Drag = Drag;
 
 
 
-}, '3.0.0pr2' ,{requires:['dd-drag'], skinnable:false, optional:['dd-constrain', 'dd-proxy']});
+
+
+}, '3.1.0' ,{requires:['dd-drag'], optional:['dd-constrain', 'dd-proxy'], skinnable:false});

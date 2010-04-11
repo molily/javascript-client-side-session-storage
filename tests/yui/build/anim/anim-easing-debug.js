@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 3.0.0pr2
+http://developer.yahoo.com/yui/license.html
+version: 3.1.0
+build: 2026
 */
 YUI.add('anim-easing', function(Y) {
 
@@ -32,6 +33,7 @@ Y.Easing = {
 
     /**
      * Uniform speed between points.
+     * @for Easing
      * @method easeNone
      * @param {Number} t Time value used to compute current value
      * @param {Number} b Starting value
@@ -251,7 +253,7 @@ Y.Easing = {
      * @return {Number} The computed value for the current animation frame
      */
     backIn: function (t, b, c, d, s) {
-        if (s == undefined) {
+        if (s === undefined) {
             s = 1.70158;
         }
         if (t === d) {
@@ -350,4 +352,4 @@ Y.Easing = {
 };
 
 
-}, '3.0.0pr2' ,{requires:['anim-base']});
+}, '3.1.0' ,{requires:['anim-base']});
