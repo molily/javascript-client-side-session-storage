@@ -1,12 +1,20 @@
 /*
     http://www.JSON.org/json2.js
-    2008-10-31
+    2010-03-20
 
     Public Domain.
 
     NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 
     See http://www.JSON.org/js.html
+
+
+    This code should be minified before deployment.
+    See http://javascript.crockford.com/jsmin.html
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+
 
     This file creates a global JSON object containing two methods: stringify
     and parse.
@@ -33,7 +41,7 @@
             value represented by the name/value pair that should be serialized,
             or undefined if nothing should be serialized. The toJSON method
             will be passed the key associated with the value, and this will be
-            bound to the object holding the key.
+            bound to the value
 
             For example, this would serialize Dates as ISO strings.
 
@@ -136,31 +144,25 @@
 
     This is a reference implementation. You are free to copy, modify, or
     redistribute.
-
-    This code should be minified before deployment.
-    See http://javascript.crockford.com/jsmin.html
-
-    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
-    NOT CONTROL.
 */
 
-/*jslint evil: true */
+/*jslint evil: true, strict: false */
 
-/*global JSON */
-
-/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", call,
-    charCodeAt, getUTCDate, getUTCFullYear, getUTCHours, getUTCMinutes,
-    getUTCMonth, getUTCSeconds, hasOwnProperty, join, lastIndex, length,
-    parse, propertyIsEnumerable, prototype, push, replace, slice, stringify,
+/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", apply,
+    call, charCodeAt, getUTCDate, getUTCFullYear, getUTCHours,
+    getUTCMinutes, getUTCMonth, getUTCSeconds, hasOwnProperty, join,
+    lastIndex, length, parse, prototype, push, replace, slice, stringify,
     test, toJSON, toString, valueOf
 */
+
 
 // Create a JSON object only if one does not already exist. We create the
 // methods in a closure to avoid creating global variables.
 
 if (!this.JSON) {
-    JSON = {};
+    this.JSON = {};
 }
+
 (function () {
 
     function f(n) {
@@ -172,12 +174,13 @@ if (!this.JSON) {
 
         Date.prototype.toJSON = function (key) {
 
-            return this.getUTCFullYear()   + '-' +
+            return isFinite(this.valueOf()) ?
+                   this.getUTCFullYear()   + '-' +
                  f(this.getUTCMonth() + 1) + '-' +
                  f(this.getUTCDate())      + 'T' +
                  f(this.getUTCHours())     + ':' +
                  f(this.getUTCMinutes())   + ':' +
-                 f(this.getUTCSeconds())   + 'Z';
+                 f(this.getUTCSeconds())   + 'Z' : null;
         };
 
         String.prototype.toJSON =
@@ -214,10 +217,8 @@ if (!this.JSON) {
         return escapable.test(string) ?
             '"' + string.replace(escapable, function (a) {
                 var c = meta[a];
-                if (typeof c === 'string') {
-                    return c;
-                }
-                return '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+                return typeof c === 'string' ? c :
+                    '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
             }) + '"' :
             '"' + string + '"';
     }
@@ -287,12 +288,11 @@ if (!this.JSON) {
             gap += indent;
             partial = [];
 
-// If the object has a dontEnum length property, we'll treat it as an array.
+// Is the value an array?
 
-            if (typeof value.length === 'number' &&
-                    !value.propertyIsEnumerable('length')) {
+            if (Object.prototype.toString.apply(value) === '[object Array]') {
 
-// The object is an array. Stringify every element. Use null as a placeholder
+// The value is an array. Stringify every element. Use null as a placeholder
 // for non-JSON values.
 
                 length = value.length;
@@ -433,6 +433,7 @@ if (!this.JSON) {
 // Unicode characters with escape sequences. JavaScript handles many characters
 // incorrectly, either silently deleting them, or treating them as line endings.
 
+            text = String(text);
             cx.lastIndex = 0;
             if (cx.test(text)) {
                 text = text.replace(cx, function (a) {
@@ -478,4 +479,4 @@ replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
             throw new SyntaxError('JSON.parse');
         };
     }
-})();
+}());
