@@ -11,7 +11,7 @@
 
 /* Anonymous Function Wrapper to establish a local variable scope */
 
-(function () {
+(function (window, document) {
 	
 	/* ******************************************************************** */
 	/* Public Interface Name */
@@ -85,6 +85,7 @@
 			That's really ugly, but there's no other reliable solution.
 			Otherwise it cannot be guaranteed that the dependancy is fully loaded
 			and executed by the time the public methods of this script are used. */
+			/* TODO: Switch to an asynchronous API */
 			var req = (window.XMLHttpRequest ? new XMLHttpRequest : (window.ActiveXObject ? new ActiveXObject('Microsoft.XMLHTTP') : false));
 			if (!req) {
 				return false;
@@ -507,7 +508,7 @@
 	 * Delete the implementation object to free some memory. Otherwise
 	 * it would be kept in memory due to the many closures (nested functions).
 	 */
-	delete implementation;
+	implementation = null;
 
 	/* Call the anonymous function: */
-})();
+})(window, document);
