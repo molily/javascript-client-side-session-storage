@@ -1,12 +1,12 @@
 /*
  * Storage - Cross Document Transport of JavaScript Data
- * 
+ *
  * Extensible Wrapper for HTML 5's DOM Storage, Microsoft's UserData,
  * Session Cookies and window.name using JSON serialization
- * 
- * Author: Mathias Schaefer <molily@selfhtml.org>
+ *
+ * Author: Mathias Schaefer <molily@mailbox.org>
  * License: Public Domain
- * 
+ *
  */
 
 /* Namespace */
